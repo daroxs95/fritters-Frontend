@@ -26,7 +26,7 @@ add_executable(frittersFrontend
               )
 
 #collect( "https://github.com/PotatoBite/fritters" "v0.0.4" frittersFrontend )
-collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.5" frittersFrontend )#development
+collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.6" frittersFrontend )#development
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
