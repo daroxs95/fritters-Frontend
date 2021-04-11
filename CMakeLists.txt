@@ -26,7 +26,7 @@ add_executable(frittersFrontend
               )
 
 #collect( "https://github.com/PotatoBite/fritters" "v0.0.4" frittersFrontend )
-collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.6" frittersFrontend )#development
+collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.7" frittersFrontend )#development
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
@@ -49,7 +49,7 @@ set_target_properties(frittersFrontend
 
 ### Add some usable files to project build folder
 set (RequiredExtras
-    ""
+    "passwords.txt"
 )
 
 #target_link_libraries( Fritters )
@@ -58,8 +58,9 @@ set (RequiredExtras
 set_target_properties(frittersFrontend PROPERTIES RESOURCE "${RequiredExtras}")
 
 install(TARGETS frittersFrontend
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    OBJECTS DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION  ${CMAKE_INSTALL_BINDIR}
+    RESOURCE DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY DESTINATION  ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION  ${CMAKE_INSTALL_LIBDIR}
+    OBJECTS DESTINATION  ${CMAKE_INSTALL_LIBDIR}
 )

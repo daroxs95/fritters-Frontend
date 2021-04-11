@@ -1,0 +1,3 @@
+-try to store only one isntance of RC4 class on the RC4 windows, for all operations
+-copy fonts folder in cmake to install/build folder
+-REQUIRED_EXTRAS not working
