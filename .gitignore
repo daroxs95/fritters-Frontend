@@ -78,6 +78,7 @@ Thumbs.db
 .directory
 CMakeLists.txt.user
 .vscode/
+.vs/
 
 #Dependencies
 collected_deps/

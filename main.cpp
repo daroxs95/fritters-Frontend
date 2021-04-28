@@ -4,15 +4,18 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <thread>
 
-#include "imgui/easy_imgui_dx9.h"
+#include "imgui/easy_imgui_dx11.h"
+#include "imgui/implot/implot.h"
 #include "random_password.h"
 
 
 template<typename T>
 inline T get_max(const T array[], int array_size);
 inline void arrayOccurrences2probabilities(int [], float [], int, int);
-void RC4statsS_0(const std::list<std::string> passwords, int occurrences[256][256]);
+void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][256]);
+void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrence_probability[256][256],const int number_of_experiments);
 
 using namespace std;
 
@@ -24,6 +27,41 @@ static void app(app_state &app_state, ImVec4 &clear_color );
 
 int main(void)
 {
+
+    /*
+    {
+        static std::ifstream passwords_file;
+
+        static int number_of_passwords = 0;
+        static float occurrence_probability[256][256];
+
+        if (!passwords_file.is_open()) passwords_file.open("passwords.txt");
+
+        std::list<std::string> passwords;
+        {
+            number_of_passwords = 0;
+
+            std::string password;
+
+            while (!passwords_file.eof())
+            {
+                std::getline(passwords_file, password);
+                if (password != "")
+                {
+                    passwords.push_back(password);
+                    number_of_passwords++;
+                }
+            }
+            passwords_file.close();
+        }
+
+        static std::thread fillProbabilities(GetProbabilitiesRC4afterKSA, passwords, std::ref(occurrence_probability), number_of_passwords);
+        //GetProbabilitiesRC4afterKSA(passwords, std::ref(occurrence_probability), number_of_passwords);
+        fillProbabilities.join();
+        cout << "calculate successfully";
+    }
+    */
+
     //create and fill state
     app_state state;
 
@@ -38,7 +76,7 @@ int main(void)
         clear_color,
         [](ImGuiIO &io)->void{
             ImGui::StyleColorsClassic();
-            io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 14.0f);
+            io.Fonts->AddFontFromFileTTF("imgui/fonts/Roboto-Medium.ttf", 14.0f);
         },
         false);
 
@@ -47,7 +85,6 @@ int main(void)
 
 static void app(app_state &state, ImVec4 &clear_color )
 {       
-
         /*
         //basic example
         {
@@ -109,7 +146,7 @@ static void app(app_state &state, ImVec4 &clear_color )
             static uint8_t tmepS0array[256];
             static std::stringstream tempStream;
 
-            enum Bases
+            enum class Bases
             {
                 hex, dec
             };
@@ -192,16 +229,14 @@ static void app(app_state &state, ImVec4 &clear_color )
         //RC4 multicipher from file
         {
             static std::ifstream passwords_file;
-
+            static bool calculating = false;
             static int number_of_passwords = 0;
-            static int occurrences[256][256];//static arrays are initialized to 0
-            static float occurrence_probability[256][256];//holds probability of second_index to be on first_index at S_0(first state array of RC4)
-            static float max_value = 0;
+            static float occurrence_probability[256][256];//holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
             static int graphs_numbers = 3;
             static int positions[3] = {0,1,2};//position to get probability at, for each histogram showed, size is of max histograms
 
 
-            enum CalculateFrom
+            enum class CalculateFrom
             {
                 file, generated
             };
@@ -219,58 +254,58 @@ static void app(app_state &state, ImVec4 &clear_color )
             if (ImGui::RadioButton("From file", calculateFrom == CalculateFrom::file)) { calculateFrom = CalculateFrom::file;} ImGui::SameLine();
             if (ImGui::RadioButton("From generated", calculateFrom == CalculateFrom::generated)) { calculateFrom = CalculateFrom::generated;} ImGui::SameLine();
 
-            if (ImGui::Button("Calculate"))
+            if(!calculating)
             {   
-                //reinitializing stuff to be able to calculate multiple times without the previously calculated state
-                for (int i = 0; i < 256; ++i)
-                {
-                    for (size_t ii = 0; ii < 256; ii++)
+                if (ImGui::Button("Calculate"))
+                {   
+                    calculating = true;
+
+                    std::thread t([&]()->void
                     {
-                        occurrences[i][ii] = 0;
-                    }
-                }
+                        std::list<std::string> passwords;
+                        
+                        srand((unsigned) time(0));//for generating random strings
 
-                std::list<std::string> passwords;
-
-                if(calculateFrom == CalculateFrom::file)
-                {
-                    number_of_passwords = 0;
-
-                    std::string password;
-
-                    while (! passwords_file.eof() )
-                    {
-                        std::getline(passwords_file, password);
-                        if(password != "")
+                        if(calculateFrom == CalculateFrom::file)
                         {
-                            passwords.push_back(password);                    
-                            number_of_passwords++;
+                            number_of_passwords = 0;
+
+                            std::string password;
+
+                            while (! passwords_file.eof() )
+                            {
+                                std::getline(passwords_file, password);
+                                if(password != "")
+                                {
+                                    passwords.push_back(password);                    
+                                    number_of_passwords++;
+                                }
+                            }
+                            passwords_file.close();
                         }
-                    }
-                    passwords_file.close();
-                }
-                else if(calculateFrom == CalculateFrom::generated)
-                {
-                    //set a default value for compatibility
-                    if (number_of_passwords == 0) number_of_passwords = 2560;
+                        else if(calculateFrom == CalculateFrom::generated)
+                        {
+                            //set a default value for compatibility
+                            if (number_of_passwords == 0) number_of_passwords = 500000;
 
-                    for (size_t i = 0; i < number_of_passwords; i++)
-                    {
-                        passwords.push_back(getRandomString(32));
-                    }
-                }
-
-
-                RC4statsS_0(passwords,occurrences);
-
-                for (size_t i = 0; i < 256; i++)
-                {
-                    arrayOccurrences2probabilities(occurrences[i], occurrence_probability[i], 256, number_of_passwords);
+                            for (size_t i = 0; i < number_of_passwords; i++)
+                            {
+                                passwords.push_back(getRandomString(32));
+                            }
+                        }
+                        
+                        GetProbabilitiesRC4afterKSA(passwords, occurrence_probability, number_of_passwords);
+                        calculating = false;
+                    });
+                    t.detach();
                 }
 
-                max_value = get_max(occurrence_probability[0], 256);
             }
-
+            else
+            {
+                ImGui::Text("Calculating");
+            }
+            
             ImGui::SameLine();
             if(calculateFrom == CalculateFrom::generated)
             {
@@ -325,7 +360,7 @@ inline T get_max(const T array[], int array_size)
  * @param passwords List of passwords to calc KSA on
  * @param occurrences 256x256 matrix with that holds number of occurrences of second_index in first_index at S_0(first state array of RC4)(ie: occurrences[0][3] is how many times the value 3 end up in position 0 at S_0)
  */
-void RC4statsS_0(const std::list<std::string> passwords, int occurrences[256][256])
+void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][256])
 {
     RC4 cipher("password");//just for initialize a cipher instance, not really using that password, well if is in file yes,lol
     uint8_t temp_state_array[256];
@@ -338,5 +373,26 @@ void RC4statsS_0(const std::list<std::string> passwords, int occurrences[256][25
         {
             occurrences[i][temp_state_array[i]]++;
         }
+    }
+}
+
+
+void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrence_probability[256][256],const int number_of_experiments)
+{
+    int occurrences[256][256];//static arrays are initialized to 0
+
+    for (int i = 0; i < 256; i++)
+    {
+        for (int ii = 0; ii < 256; ii++)
+        {
+            occurrences[i][ii] = 0;
+        }
+    }
+    
+    RC4statsS_0(passwords,occurrences);
+    
+    for (int i = 0; i < 256; i++)
+    {
+        arrayOccurrences2probabilities(occurrences[i], occurrence_probability[i], 256, number_of_experiments);
     }
 }

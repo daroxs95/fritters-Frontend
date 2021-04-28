@@ -18,22 +18,27 @@ add_executable(frittersFrontend
               "main.cpp"
               "imgui/imgui/imgui.cpp"
               "imgui/imgui/imgui_draw.cpp"
-              "imgui/imgui/imgui_demo.cpp"
+              "imgui/imgui/imgui_tables.cpp"
               "imgui/imgui/imgui_widgets.cpp"
-              "imgui/imgui/imgui_impl_dx9.cpp"
+              #"imgui/imgui/imgui_impl_dx9.cpp"
+              "imgui/imgui/imgui_impl_dx11.cpp"
               "imgui/imgui/imgui_impl_win32.cpp"
               "imgui/imgui/imgui_stdlib.cpp"
+              "imgui/imgui/imgui_demo.cpp"
+              "imgui/implot/implot.cpp"
+              "imgui/implot/implot_items.cpp"
               )
 
 #collect( "https://github.com/PotatoBite/fritters" "v0.0.4" frittersFrontend )
-collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.7" frittersFrontend )#development
+collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.10" frittersFrontend )#development
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 
 include(CPack)
 
-target_link_libraries (frittersFrontend PRIVATE fritters_static d3d9 xinput)
+#target_link_libraries (frittersFrontend PRIVATE fritters_static d3d9 xinput Imm32 Dwmapi)#for d3d9
+target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler Imm32 Dwmapi)#for d3d9
 
 
 
@@ -50,9 +55,17 @@ set_target_properties(frittersFrontend
 ### Add some usable files to project build folder
 set (RequiredExtras
     "passwords.txt"
+    "imgui/fonts/Roboto-Medium.ttf"
 )
 
-#target_link_libraries( Fritters )
+#try to avoid this
+foreach (_file ${RequiredExtras})
+        configure_file (
+      ${PROJECT_SOURCE_DIR}/${_file}
+      ${PROJECT_BINARY_DIR}/bin/${_file}
+      COPYONLY
+    )
+endforeach()
 
 #preparing install step
 set_target_properties(frittersFrontend PROPERTIES RESOURCE "${RequiredExtras}")

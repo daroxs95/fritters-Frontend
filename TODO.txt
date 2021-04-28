@@ -1,3 +1,4 @@
 -try to store only one isntance of RC4 class on the RC4 windows, for all operations
 -copy fonts folder in cmake to install/build folder
 -REQUIRED_EXTRAS not working
+-easy_imgui_dx9 is not working due to an upgrade on dearimgui and not upgrade of its code, failing an assert due to missmatch versions

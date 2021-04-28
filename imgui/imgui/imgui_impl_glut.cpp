@@ -1,8 +1,8 @@
-// dear imgui: Platform Binding for GLUT/FreeGLUT
+// dear imgui: Platform Backend for GLUT/FreeGLUT
 // This needs to be used along with a Renderer (e.g. OpenGL2)
 
-// !!! GLUT/FreeGLUT IS OBSOLETE SOFTWARE. Using GLUT is not recommended unless you really miss the 90's. !!!
-// !!! If someone or something is teaching you GLUT in 2020, you are being abused. Please show some resistance. !!!
+// !!! GLUT/FreeGLUT IS OBSOLETE PREHISTORIC SOFTWARE. Using GLUT is not recommended unless you really miss the 90's. !!!
+// !!! If someone or something is teaching you GLUT today, you are being abused. Please show some resistance. !!!
 // !!! Nowadays, prefer using GLFW or SDL instead!
 
 // Issues:
@@ -11,9 +11,9 @@
 //  [ ] Platform: Missing clipboard support (not supported by Glut).
 //  [ ] Platform: Missing gamepad support.
 
-// You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
-// If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
-// https://github.com/ocornut/imgui
+// You can copy and use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
+// Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
@@ -25,9 +25,9 @@
 #include "imgui.h"
 #include "imgui_impl_glut.h"
 #ifdef __APPLE__
-    #include <GLUT/glut.h>
+#include <GLUT/glut.h>
 #else
-    #include <GL/freeglut.h>
+#include <GL/freeglut.h>
 #endif
 
 #ifdef _MSC_VER
@@ -41,9 +41,9 @@ bool ImGui_ImplGLUT_Init()
     ImGuiIO& io = ImGui::GetIO();
 
 #ifdef FREEGLUT
-    io.BackendPlatformName ="imgui_impl_glut (freeglut)";
+    io.BackendPlatformName = "imgui_impl_glut (freeglut)";
 #else
-    io.BackendPlatformName ="imgui_impl_glut";
+    io.BackendPlatformName = "imgui_impl_glut";
 #endif
 
     g_Time = 0;

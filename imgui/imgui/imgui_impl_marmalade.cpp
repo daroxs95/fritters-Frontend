@@ -1,4 +1,4 @@
-// dear imgui: Renderer + Platform Binding for Marmalade + IwGx
+// dear imgui: Renderer + Platform Backend for Marmalade + IwGx
 // Marmalade code: Copyright (C) 2015 by Giovanni Zito (this file is part of Dear ImGui)
 
 // Implemented features:
@@ -6,9 +6,9 @@
 // Missing features:
 //  [ ] Renderer: Clipping rectangles are not honored.
 
-// You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
-// If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
-// https://github.com/ocornut/imgui
+// You can copy and use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
+// Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
@@ -36,10 +36,9 @@ static char*        g_ClipboardText = NULL;
 static bool         g_osdKeyboardEnabled = false;
 
 // use this setting to scale the interface - e.g. on device you could use 2 or 3 scale factor
-static ImVec2       g_RenderScale = ImVec2(1.0f,1.0f);
+static ImVec2       g_RenderScale = ImVec2(1.0f, 1.0f);
 
 // Render function.
-// (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
 void ImGui_Marmalade_RenderDrawData(ImDrawData* draw_data)
 {
     // Avoid rendering when minimized
@@ -195,7 +194,7 @@ bool ImGui_Marmalade_CreateDeviceObjects()
     g_FontTexture->Upload();
 
     // Store our identifier
-    io.Fonts->TexID = (ImTextureID)g_FontTexture;
+    io.Fonts->SetTexID((ImTextureID)g_FontTexture);
 
     return true;
 }
@@ -210,8 +209,8 @@ void    ImGui_Marmalade_InvalidateDeviceObjects()
 
     if (g_FontTexture)
     {
+        ImGui::GetIO().Fonts->SetTexID(0);
         delete g_FontTexture;
-        ImGui::GetIO().Fonts->TexID = 0;
         g_FontTexture = NULL;
     }
 }
@@ -221,7 +220,8 @@ bool    ImGui_Marmalade_Init(bool install_callbacks)
     ImGuiIO& io = ImGui::GetIO();
     io.BackendPlatformName = io.BackendRendererName = "imgui_impl_marmalade";
 
-    io.KeyMap[ImGuiKey_Tab] = s3eKeyTab;                     // Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
+    // Keyboard mapping. Dear ImGui will use those indices to peek into the io.KeysDown[] array.
+    io.KeyMap[ImGuiKey_Tab] = s3eKeyTab
     io.KeyMap[ImGuiKey_LeftArrow] = s3eKeyLeft;
     io.KeyMap[ImGuiKey_RightArrow] = s3eKeyRight;
     io.KeyMap[ImGuiKey_UpArrow] = s3eKeyUp;
@@ -272,18 +272,18 @@ void ImGui_Marmalade_NewFrame()
     // Setup display size (every frame to accommodate for window resizing)
     int w = IwGxGetScreenWidth(), h = IwGxGetScreenHeight();
     io.DisplaySize = ImVec2((float)w, (float)h);
-     // For retina display or other situations where window coordinates are different from framebuffer coordinates. User storage only, presently not used by ImGui.
+    // For retina display or other situations where window coordinates are different from framebuffer coordinates. User storage only, presently not used by ImGui.
     io.DisplayFramebufferScale = g_scale;
 
     // Setup time step
     double current_time = s3eTimerGetUST() / 1000.0f;
-    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f/60.0f);
+    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f / 60.0f);
     g_Time = current_time;
 
     double mouse_x, mouse_y;
     mouse_x = s3ePointerGetX();
     mouse_y = s3ePointerGetY();
-    io.MousePos = ImVec2((float)mouse_x/g_scale.x, (float)mouse_y/g_scale.y);   // Mouse position (set to -FLT_MAX,-FLT_MAX if no mouse / on another screen, etc.)
+    io.MousePos = ImVec2((float)mouse_x / g_scale.x, (float)mouse_y / g_scale.y); // Mouse position (set to -FLT_MAX,-FLT_MAX if no mouse / on another screen, etc.)
 
     for (int i = 0; i < 3; i++)
     {
@@ -294,7 +294,7 @@ void ImGui_Marmalade_NewFrame()
     // TODO: Hide OS mouse cursor if ImGui is drawing it
     // s3ePointerSetInt(S3E_POINTER_HIDE_CURSOR,(io.MouseDrawCursor ? 0 : 1));
 
-     // Show/hide OSD keyboard
+    // Show/hide OSD keyboard
     if (io.WantTextInput)
     {
         // Some text input widget is active?

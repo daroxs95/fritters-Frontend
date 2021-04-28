@@ -6,6 +6,7 @@
 #include "imgui/imgui_impl_dx9.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_stdlib.h"
+#include "defaults.h"
 #include <d3d9.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
@@ -22,7 +23,6 @@ bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-void default_setup_imgui(ImGuiIO &io);
 
 // Main code
 int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, bool show_demo_window = true )
@@ -51,7 +51,7 @@ int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    //call user passed setuo function, to style app and stuff
+    //call user passed setup function, to style app and stuff
     if(setup_imgui != NULL) setup_imgui(io);
 
 
@@ -204,14 +204,4 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     return ::DefWindowProc(hWnd, msg, wParam, lParam);
-}
-
-
-void default_setup_imgui(ImGuiIO &io)
-{
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
 }

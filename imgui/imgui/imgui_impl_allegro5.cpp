@@ -1,4 +1,4 @@
-// dear imgui: Renderer + Platform Binding for Allegro 5
+// dear imgui: Renderer + Platform Backend for Allegro 5
 // (Info: Allegro 5 is a cross-platform general purpose library for handling windows, inputs, graphics, etc.)
 
 // Implemented features:
@@ -9,12 +9,14 @@
 //  [ ] Renderer: The renderer is suboptimal as we need to unindex our buffers and convert vertices manually.
 //  [ ] Platform: Missing gamepad support.
 
-// You can copy and use unmodified imgui_impl_* files in your project. See main.cpp for an example of using this.
-// If you are new to dear imgui, read examples/README.txt and read the documentation at the top of imgui.cpp.
-// https://github.com/ocornut/imgui, Original Allegro 5 code by @birthggd
+// You can copy and use unmodified imgui_impl_* files in your project. See examples/ folder for examples of using this.
+// If you are new to Dear ImGui, read documentation from the docs/ folder + read the top of imgui.cpp.
+// Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 // CHANGELOG
 // (minor and older changes stripped away, please see git history for details)
+//  2021-02-18: Change blending equation to preserve alpha in output buffer.
+//  2020-08-10: Inputs: Fixed horizontal mouse wheel direction.
 //  2019-12-05: Inputs: Added support for ImGuiMouseCursor_NotAllowed mouse cursor.
 //  2019-07-21: Inputs: Added mapping for ImGuiKey_KeyPadEnter.
 //  2019-05-11: Inputs: Don't filter character value from ALLEGRO_EVENT_KEY_CHAR before calling AddInputCharacter().
@@ -67,7 +69,7 @@ struct ImDrawVertAllegro
 static void ImGui_ImplAllegro5_SetupRenderState(ImDrawData* draw_data)
 {
     // Setup blending
-    al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+    al_set_separate_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA, ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_INVERSE_ALPHA);
 
     // Setup orthographic projection matrix
     // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right).
@@ -85,7 +87,6 @@ static void ImGui_ImplAllegro5_SetupRenderState(ImDrawData* draw_data)
 }
 
 // Render function.
-// (this used to be set in io.RenderDrawListsFn and called by ImGui::Render(), but you can now call this directly from your main loop)
 void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
 {
     // Avoid rendering when minimized
@@ -174,7 +175,7 @@ void ImGui_ImplAllegro5_RenderDrawData(ImDrawData* draw_data)
 bool ImGui_ImplAllegro5_CreateDeviceObjects()
 {
     // Build texture atlas
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
     unsigned char* pixels;
     int width, height;
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
@@ -182,7 +183,7 @@ bool ImGui_ImplAllegro5_CreateDeviceObjects()
     // Create texture
     int flags = al_get_new_bitmap_flags();
     int fmt = al_get_new_bitmap_format();
-    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP|ALLEGRO_MIN_LINEAR|ALLEGRO_MAG_LINEAR);
+    al_set_new_bitmap_flags(ALLEGRO_MEMORY_BITMAP | ALLEGRO_MIN_LINEAR | ALLEGRO_MAG_LINEAR);
     al_set_new_bitmap_format(ALLEGRO_PIXEL_FORMAT_ABGR_8888_LE);
     ALLEGRO_BITMAP* img = al_create_bitmap(width, height);
     al_set_new_bitmap_flags(flags);
@@ -190,13 +191,13 @@ bool ImGui_ImplAllegro5_CreateDeviceObjects()
     if (!img)
         return false;
 
-    ALLEGRO_LOCKED_REGION *locked_img = al_lock_bitmap(img, al_get_bitmap_format(img), ALLEGRO_LOCK_WRITEONLY);
+    ALLEGRO_LOCKED_REGION* locked_img = al_lock_bitmap(img, al_get_bitmap_format(img), ALLEGRO_LOCK_WRITEONLY);
     if (!locked_img)
     {
         al_destroy_bitmap(img);
         return false;
     }
-    memcpy(locked_img->data, pixels, sizeof(int)*width*height);
+    memcpy(locked_img->data, pixels, sizeof(int) * width * height);
     al_unlock_bitmap(img);
 
     // Convert software texture to hardware texture.
@@ -206,12 +207,12 @@ bool ImGui_ImplAllegro5_CreateDeviceObjects()
         return false;
 
     // Store our identifier
-    io.Fonts->TexID = (void*)cloned_img;
+    io.Fonts->SetTexID((void*)cloned_img);
     g_Texture = cloned_img;
 
     // Create an invisible mouse cursor
     // Because al_hide_mouse_cursor() seems to mess up with the actual inputs..
-    ALLEGRO_BITMAP* mouse_cursor = al_create_bitmap(8,8);
+    ALLEGRO_BITMAP* mouse_cursor = al_create_bitmap(8, 8);
     g_MouseCursorInvisible = al_create_mouse_cursor(mouse_cursor, 0, 0);
     al_destroy_bitmap(mouse_cursor);
 
@@ -222,8 +223,9 @@ void ImGui_ImplAllegro5_InvalidateDeviceObjects()
 {
     if (g_Texture)
     {
+        ImGuiIO& io = ImGui::GetIO();
+        io.Fonts->SetTexID(NULL);
         al_destroy_bitmap(g_Texture);
-        ImGui::GetIO().Fonts->TexID = NULL;
         g_Texture = NULL;
     }
     if (g_MouseCursorInvisible)
@@ -252,7 +254,7 @@ bool ImGui_ImplAllegro5_Init(ALLEGRO_DISPLAY* display)
 {
     g_Display = display;
 
-    // Setup back-end capabilities flags
+    // Setup backend capabilities flags
     ImGuiIO& io = ImGui::GetIO();
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
     io.BackendPlatformName = io.BackendRendererName = "imgui_impl_allegro5";
@@ -322,7 +324,7 @@ void ImGui_ImplAllegro5_Shutdown()
 // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application.
 // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application.
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-bool ImGui_ImplAllegro5_ProcessEvent(ALLEGRO_EVENT *ev)
+bool ImGui_ImplAllegro5_ProcessEvent(ALLEGRO_EVENT* ev)
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -332,7 +334,7 @@ bool ImGui_ImplAllegro5_ProcessEvent(ALLEGRO_EVENT *ev)
         if (ev->mouse.display == g_Display)
         {
             io.MouseWheel += ev->mouse.dz;
-            io.MouseWheelH += ev->mouse.dw;
+            io.MouseWheelH -= ev->mouse.dw;
             io.MousePos = ImVec2(ev->mouse.x, ev->mouse.y);
         }
         return true;
@@ -357,7 +359,8 @@ bool ImGui_ImplAllegro5_ProcessEvent(ALLEGRO_EVENT *ev)
         return true;
     case ALLEGRO_EVENT_KEY_CHAR:
         if (ev->keyboard.display == g_Display)
-            io.AddInputCharacter((unsigned int)ev->keyboard.unichar);
+            if (ev->keyboard.unichar != 0)
+                io.AddInputCharacter((unsigned int)ev->keyboard.unichar);
         return true;
     case ALLEGRO_EVENT_KEY_DOWN:
     case ALLEGRO_EVENT_KEY_UP:
@@ -402,7 +405,7 @@ void ImGui_ImplAllegro5_NewFrame()
     if (!g_Texture)
         ImGui_ImplAllegro5_CreateDeviceObjects();
 
-    ImGuiIO &io = ImGui::GetIO();
+    ImGuiIO& io = ImGui::GetIO();
 
     // Setup display size (every frame to accommodate for window resizing)
     int w, h;
@@ -412,7 +415,7 @@ void ImGui_ImplAllegro5_NewFrame()
 
     // Setup time step
     double current_time = al_get_time();
-    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f/60.0f);
+    io.DeltaTime = g_Time > 0.0 ? (float)(current_time - g_Time) : (float)(1.0f / 60.0f);
     g_Time = current_time;
 
     // Setup inputs
