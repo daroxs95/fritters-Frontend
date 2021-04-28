@@ -28,13 +28,13 @@ void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Main code
-int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, bool show_demo_window = true )
+int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
 {
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T("ImGui Example"), NULL };
     ::RegisterClassEx(&wc);
-    HWND hwnd = ::CreateWindow(wc.lpszClassName, _T("Dear ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = ::CreateWindow(wc.lpszClassName, name, WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -128,6 +128,8 @@ int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4
     }
 
     // Cleanup
+    if(end_imgui != NULL) end_imgui();
+
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();

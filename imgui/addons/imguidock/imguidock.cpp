@@ -29,7 +29,7 @@ SOFTWARE.
 #include <imgui.h>
 #include <functional>
 #include <algorithm>
-#include <jsoncpp/json.h>
+#include <json/json.h>
 #undef IMGUI_DEFINE_PLACEMENT_NEW
 #define IMGUI_DEFINE_PLACEMENT_NEW
 #undef IMGUI_DEFINE_MATH_OPERATORS
@@ -805,7 +805,7 @@ struct DockContext
                     m_next_parent = dock_tab;
                 }
 
-                if (IsItemActive() && IsMouseDragging())
+                if (IsItemActive() && IsMouseDragging(0))
                 {
                     m_drag_offset = GetMousePos() - dock_tab->pos;
                     doUndock(*dock_tab);
@@ -1288,7 +1288,7 @@ struct DockContext
     }
 
 	bool isMouseHoveringDock() {
-		if (!ImGui::IsMouseHoveringWindow()) return false;
+		if (!ImGui::IsWindowHovered()) return false;
 		for (int i = 0; i < m_docks.size(); ++i) {
 			if (m_docks[i]->status == Status_Dragged)
 				return false;

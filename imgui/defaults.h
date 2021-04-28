@@ -7,3 +7,12 @@ void default_setup_imgui(ImGuiIO &io)
     //ImGui::StyleColorsClassic();
 
 }
+
+void default_end_imgui()
+{
+
+    // Setup Dear ImGui style
+    //ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
+}
