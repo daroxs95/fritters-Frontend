@@ -252,7 +252,8 @@ void RC4Analytics()//RC4 multicipher from file
             {
                 ImGui::Text("Value of v");
                 ImGui::SameLine();
-                ImGui::InputInt(std::to_string(i).c_str(), &positions[i] );//change way of adding label for something more performant
+                ImGui::SliderInt(std::to_string(i).c_str(), &positions[i], 0, 255);
+                //ImGui::InputInt(std::to_string(i).c_str(), &positions[i] );//change way of adding label for something more performant
 
                 //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
                 ImGui::PlotHistogram("", occurrence_probability[positions[i]], IM_ARRAYSIZE(occurrence_probability[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability[positions[i]],256), ImVec2(0,80));

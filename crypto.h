@@ -94,6 +94,8 @@ float ProbAfterRC4sKSA(int u, int v, int N=256)//u,v can be uint8_t but for more
     {
         t = v+1;
         pstuv = 2*pok*kop;
+        std::cout<<pstuv*pow(kop, N - t) + (1-pstuv)*pok*pow(kop,v)*(1-pow(kop,N - t))<<std::endl;
+
     }
     else if((u+1) <= v)
     {
@@ -105,8 +107,8 @@ float ProbAfterRC4sKSA(int u, int v, int N=256)//u,v can be uint8_t but for more
         return pok*(pow(kop,N-u-1) + pow(kop,v+1) - pow(kop,N-u+v));
     }
 
-    std::cout<<pstuv<<std::endl;
     
+
     return pstuv*pow(kop, N - t) + (1-pstuv)*pok*pow(kop,v)*(1-pow(kop,N - t));
 }
 
@@ -119,13 +121,11 @@ float ProbAfterRC4sKSA(int u, int v, int N=256)//u,v can be uint8_t but for more
  */
 void GetRealProbabilitiesRC4afterKSA(float occurrence_probability[256][256])
 {
-    int occurrences[256][256];//static arrays are initialized to 0
-
     for (int i = 0; i < 256; i++)
     {
         for (int ii = 0; ii < 256; ii++)
         {
-            occurrences[i][ii] = ProbAfterRC4sKSA(i,ii);
+            occurrence_probability[i][ii] = ProbAfterRC4sKSA(i,ii);
         }
     }
 }
