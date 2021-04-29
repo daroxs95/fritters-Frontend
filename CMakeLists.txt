@@ -32,8 +32,8 @@ add_executable(frittersFrontend
               "imgui/implot/implot_demo.cpp"#optional
               )
 
-#collect( "https://github.com/PotatoBite/fritters" "v0.0.4" frittersFrontend )
-collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.10" frittersFrontend )#development
+collect( "https://github.com/PotatoBite/fritters" "v0.0.11" frittersFrontend )
+#collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.11" frittersFrontend )#development
 collect( "https://github.com/open-source-parsers/jsoncpp" "1.9.4" frittersFrontend)
 
 

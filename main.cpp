@@ -1,6 +1,5 @@
 #include <fritters/RC4.h>
 #include <fritters/utils.h>
-#include <list>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -11,16 +10,10 @@
 #include "imgui/addons/imguidock/imguidock.cpp"
 
 #include "random_password.h"
-
-
-template<typename T>
-T get_max(const T array[], int array_size);
-void arrayOccurrences2probabilities(int [], float [], int, int);
-void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][256]);
-void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrence_probability[256][256],const int number_of_experiments);
+#include "crypto.h"
 
 //app functions
-void RC4Anal();
+void RC4Analytics();
 void RC4cipher();//RC4 cipher
 void HexStringConverter();//hex-string converter
 
@@ -37,7 +30,6 @@ static void app(app_state &app_state, ImVec4 &clear_color );
 
 int main(void)
 {
-
     /*
     {
         static std::ifstream passwords_file;
@@ -149,7 +141,7 @@ static void app(app_state &state, ImVec4 &clear_color )
             if (visible) {
                 ImGui::BeginDockspace();
 
-                RC4Anal();
+                RC4Analytics();
                 RC4cipher();
                 HexStringConverter();
 
@@ -162,79 +154,15 @@ static void app(app_state &state, ImVec4 &clear_color )
 
 }
 
-void arrayOccurrences2probabilities(int occurrences[], float probabilities[], int arr_size, int number_of_experiments)
-{
-    for (size_t i = 0; i < arr_size; i++)
-    {
-        probabilities[i] = static_cast<float>(occurrences[i]) / number_of_experiments;
-    }
-}
-
-template<typename T>
-T get_max(const T array[], int array_size)
-{
-    T max = array[0];
-    for (size_t i = 1; i < array_size; i++)
-    {
-        if(array[i] > max) max = array[i];
-    }
-    
-    return max;
-}
-
-
-/**
- * @brief Fills the `occurrences` with the probabilities
- * 
- * @param passwords List of passwords to calc KSA on
- * @param occurrences 256x256 matrix with that holds number of occurrences of second_index in first_index at S_0(first state array of RC4)(ie: occurrences[0][3] is how many times the value 3 end up in position 0 at S_0)
- */
-void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][256])
-{
-    RC4 cipher("password");//just for initialize a cipher instance, not really using that password, well if is in file yes,lol
-    uint8_t temp_state_array[256];
-    
-    for(auto password: passwords)
-    {
-        cipher.KSA(password);
-        cipher.getStateArray(temp_state_array);
-        for (size_t i = 0; i < 256; i++)
-        {
-            occurrences[i][temp_state_array[i]]++;
-        }
-    }
-}
-
-
-void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrence_probability[256][256],const int number_of_experiments)
-{
-    int occurrences[256][256];//static arrays are initialized to 0
-
-    for (int i = 0; i < 256; i++)
-    {
-        for (int ii = 0; ii < 256; ii++)
-        {
-            occurrences[i][ii] = 0;
-        }
-    }
-    
-    RC4statsS_0(passwords,occurrences);
-    
-    for (int i = 0; i < 256; i++)
-    {
-        arrayOccurrences2probabilities(occurrences[i], occurrence_probability[i], 256, number_of_experiments);
-    }
-}
-
-void RC4Anal()//RC4 multicipher from file
+void RC4Analytics()//RC4 multicipher from file
 {
             static std::ifstream passwords_file;
             static bool calculating = false;
             static int number_of_passwords = 0;
             static float occurrence_probability[256][256];//holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-            static int positions[] = {0,1};//position to get probability at, for each histogram showed, size is of max histograms
-
-
+            static float occurrence_probability_theoretical[256][256];//calculated by theoretical formulae
+            static int positions[] = {0};//position to get probability at, for each histogram showed, size is of max histograms
+            
             enum class CalculateFrom
             {
                 file, generated
@@ -247,7 +175,7 @@ void RC4Anal()//RC4 multicipher from file
             if(!passwords_file.is_open()) passwords_file.open("passwords.txt");
             
             //ImGui::Begin("RC4 S_0 analysis");//vanilla
-            if(ImGui::BeginDock("RC4 S_0 analysis")){//docking
+            if(ImGui::BeginDock("RC4 analysis")){//docking
             
             ImGui::Text("RC4 each possible value's probability to be in position x at first S(State Array) after KSA");
 
@@ -295,6 +223,7 @@ void RC4Anal()//RC4 multicipher from file
                         }
                         
                         GetProbabilitiesRC4afterKSA(passwords, occurrence_probability, number_of_passwords);
+                        GetRealProbabilitiesRC4afterKSA(occurrence_probability_theoretical);
                         calculating = false;
                     });
                     t.detach();
@@ -321,25 +250,48 @@ void RC4Anal()//RC4 multicipher from file
 
             for (int i = 0; i < IM_ARRAYSIZE(positions); i++)
             {
-                ImGui::Text("Probability to be at position");
+                ImGui::Text("Value of v");
                 ImGui::SameLine();
                 ImGui::InputInt(std::to_string(i).c_str(), &positions[i] );//change way of adding label for something more performant
 
                 //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
                 ImGui::PlotHistogram("", occurrence_probability[positions[i]], IM_ARRAYSIZE(occurrence_probability[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability[positions[i]],256), ImVec2(0,80));
-            }
-            
+                
+                ImGui::PlotHistogram("", occurrence_probability_theoretical[positions[i]], IM_ARRAYSIZE(occurrence_probability_theoretical[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability_theoretical[positions[i]],256), ImVec2(0,80));
 
-            if (ImPlot::BeginPlot("My Plot")) {
-                ImPlot::PlotBars("My Bar Plot", occurrence_probability[0], 256, 0, 100);
-                //ImPlot::PlotLine("My Line Plot", positions[0],256);
-                ImPlot::EndPlot();
+                ImPlot::SetNextPlotLimits(0,256,0,0.008);
+                if (ImPlot::BeginPlot("Positions against probability of v to be at that position(ie P(S[x]=v)","x","P(S[x]=v)")) {
+
+                    ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
+                    ImPlot::PlotShaded("Probabilities after KSA in practice", occurrence_probability[positions[i]], 256, 0);
+                    ImPlot::PlotLine("Probabilities after KSA in practice", occurrence_probability[positions[i]], 256);
+                                    
+
+                    ImPlot::PlotShaded("Probabilities after KSA theoretically", occurrence_probability_theoretical[positions[i]], 256, 0);
+                    ImPlot::PlotLine("Probabilities after KSA theoretically", occurrence_probability_theoretical[positions[i]], 256);
+                    ImPlot::PopStyleVar();
+
+                    ImPlot::EndPlot();
+                }
             }
 
-            if (ImPlot::BeginPlot("My Plot2")) {
-                ImPlot::PlotHistogram("Empirical", occurrence_probability[0], 256, 10, false, true, ImPlotRange(), true);
-                ImPlot::EndPlot();
-            }
+
+            //table TODO if in mood
+            /*if (ImGui::CollapsingHeader("Window options"))
+            {
+                if (ImGui::BeginTable("split", 256))
+                {
+                    for (short i = 0; i < 256; i++)
+                    {
+                        ImGui::TableNextColumn();
+                        for (short ii = 0; ii < 256; ii++)
+                        {
+                            ImGui::Text("%f", occurrence_probability[i][ii]);
+                        }
+                    }
+                    ImGui::EndTable();
+                }
+            }*/
 
             //ImGui::End();//vanilla
             };ImGui::EndDock();//docking
