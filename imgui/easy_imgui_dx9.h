@@ -25,7 +25,7 @@ void ResetDevice();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 // Main code
-int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, bool show_demo_window = true )
+int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
 {
     // Create application window
     WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, _T(name), NULL };

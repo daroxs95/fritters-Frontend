@@ -597,6 +597,7 @@ struct DockContext
         Dock* dest_dock = getDockAt(GetIO().MousePos);
 
 	SetNextWindowBgAlpha(0.0f);
+	SetNextWindowPos(ImVec2(0, 0));
 	Begin("##Overlay",
               NULL,
               ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |

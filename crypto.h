@@ -94,8 +94,6 @@ float ProbAfterRC4sKSA(int u, int v, int N=256)//u,v can be uint8_t but for more
     {
         t = v+1;
         pstuv = 2*pok*kop;
-        std::cout<<pstuv*pow(kop, N - t) + (1-pstuv)*pok*pow(kop,v)*(1-pow(kop,N - t))<<std::endl;
-
     }
     else if((u+1) <= v)
     {
