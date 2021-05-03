@@ -35,7 +35,6 @@ add_executable(frittersFrontend
 
 collect( "https://github.com/PotatoBite/fritters" "v0.0.11" frittersFrontend )
 #collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.11" frittersFrontend )#development
-collect( "https://github.com/open-source-parsers/jsoncpp" "1.9.4" frittersFrontend)
 
 #find_package(SDL2 REQUIRED)
 
@@ -45,7 +44,7 @@ set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
 
 #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d9 xinput Imm32 Dwmapi jsoncpp_static)#for d3d9
-target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler Imm32 Dwmapi jsoncpp_static)#for d3d11
+target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler Imm32 Dwmapi)#for d3d11
 #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler jsoncpp_static)#for d3d11 msvc
 #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d12 d3dcompiler Imm32 Dwmapi dxgi jsoncpp_static)#for d3d12
 #target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2::SDL2main SDL2::SDL2 jsoncpp_static)#for sdl_opengl3

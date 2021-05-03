@@ -3,6 +3,7 @@
 
 // Implemented features:
 //  [X] Renderer: User texture binding. Use 'D3D12_GPU_DESCRIPTOR_HANDLE' as ImTextureID. Read the FAQ about ImTextureID!
+//  [X] Renderer: Multi-viewport support. Enable with 'io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable'.
 //  [X] Renderer: Support for large meshes (64k+ vertices) with 16-bit indices.
 
 // Important: to compile on 32-bit systems, this backend requires code to be compiled with '#define ImTextureID ImU64'.
@@ -15,14 +16,13 @@
 
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
-#include "dxgiformat.h"
 
 #ifdef _MSC_VER
 #pragma warning (push)
 #pragma warning (disable: 4471) // a forward declaration of an unscoped enumeration must have an underlying type
 #endif
 
-//enum DXGI_FORMAT;
+enum DXGI_FORMAT;
 struct ID3D12Device;
 struct ID3D12DescriptorHeap;
 struct ID3D12GraphicsCommandList;

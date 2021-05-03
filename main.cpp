@@ -11,7 +11,7 @@
 //#include "imgui/easy_imgui_sdl_gl3.h"
 #include "imgui/implot/implot.h"
 //#include "imgui/addons/imguiDock-master/imgui_dock.cpp"
-#include "imgui/addons/imguidock/imguidock.cpp"
+//#include "imgui/addons/imguidock/imguidock.cpp"
 
 #include "random_password.h"
 #include "crypto.h"
@@ -71,8 +71,6 @@ int main(void)
     srand((unsigned) time(0));//for generating random strings
     
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    //in doc it appears to set global, TODO: avoid this
-    ImGui::DockContext* myDockContext=NULL;//old Dock system
 
     m_imgui_app("Fritters Playground", 
         [&]()mutable->void{
@@ -89,14 +87,8 @@ int main(void)
 
             ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(56.0 / 255.0, 54.0 / 255.0, 50.0 / 255.0, 1.0f));
             //ImGui::PushStyleColor(ImGuiCol,  ImVec4(199.0/255.0, 195.0/255.0, 190.0/255.0, 1.0f));
-
-
-            //docks
-            myDockContext = ImGui::CreateDockContext();//old Dock system
-            ImGui::SetCurrentDockContext(myDockContext);//old Dock system
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             
-            //ImGui::InitDock();
-
             //plot
             ImPlot::CreateContext();
             ImPlot::GetStyle().AntiAliasedLines = true;
@@ -105,10 +97,6 @@ int main(void)
         [&]()->void{
             //plot
             ImPlot::DestroyContext();
-
-            //docks
-            ImGui::DestroyDockContext(myDockContext);//old Dock system
-            myDockContext=NULL;//old Dock system
         },
         true);
 
@@ -161,7 +149,7 @@ static void app(app_state &state, ImVec4 &clear_color )
 
         //docking test
         {
-            ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+            //ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             const ImGuiWindowFlags flags =  (ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
             const float oldWindowRounding = ImGui::GetStyle().WindowRounding;
@@ -169,14 +157,9 @@ static void app(app_state &state, ImVec4 &clear_color )
             const bool visible = ImGui::Begin("Fritters Playground Docking",NULL,flags);
             ImGui::GetStyle().WindowRounding = oldWindowRounding;
             if (visible) {
-            //if (ImGui::Begin("imguidock window (= lumix engine's dock system)",NULL,ImGuiWindowFlags_NoScrollbar)) {
-                ImGui::BeginDockspace();
-
                 RC4Analytics();
                 RC4cipher();
                 HexStringConverter();
-
-                ImGui::EndDockspace();
             }
             ImGui::End();
         }
@@ -205,8 +188,7 @@ void RC4Analytics()//RC4 multicipher from file
             //TODO apply some check for validity of file and crossplatform stuff with std::path/filesystem, and the closing need to be checked too
             if(!passwords_file.is_open()) passwords_file.open("passwords.txt");
             
-            //ImGui::Begin("RC4 S_0 analysis");//vanilla
-            if(ImGui::BeginDock("RC4 analysis")){//docking
+            ImGui::Begin("RC4 S_0 analysis");//vanilla
             
             ImGui::Text("RC4 each possible value's probability to be in position u at first S(State Array) after KSA");
 
@@ -331,15 +313,12 @@ void RC4Analytics()//RC4 multicipher from file
                 }
             }*/
 
-            //ImGui::End();//vanilla
-            };ImGui::EndDock();//docking
-
+            ImGui::End();//vanilla
 }
 
 void RC4cipher()//RC4 cipher
 {
-            //ImGui::Begin("RC4 cipher");//vanilla
-            if(ImGui::BeginDock("RC4 cipher")){//docking
+            ImGui::Begin("RC4 cipher");//vanilla
 
             static string plaintext = "This is the plaintext";
             static string password;
@@ -430,14 +409,12 @@ void RC4cipher()//RC4 cipher
                 }
             }
 
-            };ImGui::EndDock();//docking
-            //ImGui::End();//vanilla
+            ImGui::End();//vanilla
 }
 
 void HexStringConverter()//hex-string converter
 {
-            //ImGui::Begin("Hex-string converter");vanilla
-            if(ImGui::BeginDock("Hex-string converter")){//docking
+            ImGui::Begin("Hex-string converter");
 
             static string ascii_string = "This is the string to convert to hex-string";
             static string hex_string = "This is the string to convert to hex-string";
@@ -454,6 +431,5 @@ void HexStringConverter()//hex-string converter
                 ascii_string = hexstring2asciistring(hex_string);
             }
 
-            };ImGui::EndDock();//docking
-            //ImGui::End();//vanilla
+            ImGui::End();//vanilla
 }
