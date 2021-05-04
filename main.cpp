@@ -79,14 +79,20 @@ int main(void)
         clear_color,
         [&](ImGuiIO &io)->void{
             //basic imgui
+            ImGuiStyle& style = ImGui::GetStyle();
+
             ImGui::StyleColorsClassic();
             io.Fonts->AddFontFromFileTTF("imgui/fonts/Roboto-Medium.ttf", 15.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,6.0f);
-            ImGuiStyle& style = ImGui::GetStyle();
+            //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,6.0f);
+            style.FrameRounding = 6.0f;
             style.GrabRounding = style.FrameRounding;//make the slider get the same rounding
 
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(56.0 / 255.0, 54.0 / 255.0, 50.0 / 255.0, 1.0f));
-            //ImGui::PushStyleColor(ImGuiCol,  ImVec4(199.0/255.0, 195.0/255.0, 190.0/255.0, 1.0f));
+            //colors
+            style.Colors[ImGuiCol_WindowBg]               = ImVec4(56.0 / 255.0, 54.0 / 255.0, 50.0 / 255.0, 1.0f);
+            style.Colors[ImGuiCol_TitleBg]                = ImVec4(0.43f, 0.43f, 0.43f, 0.39f);
+            style.Colors[ImGuiCol_TitleBgActive]          = ImVec4(0.17f, 0.17f, 0.17f, 0.39f);
+            
+            //enable docking, not sure if needed
             ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             
             //plot
@@ -127,42 +133,10 @@ static void app(app_state &state, ImVec4 &clear_color )
             ImGui::End();
         }
         */
-
-        //RC4cipher();
-        //HexStringConverter();
-        //RC4Anal();
-        /*
-        if (ImGui::Begin("imguidock window (= lumix engine's dock system)",NULL,ImGuiWindowFlags_NoScrollbar)) {
-            ImGui::BeginDockspace();
-            static char tmp[128];
-            for (int i=0;i<10;i++)  {
-                sprintf(tmp,"Dock %d",i);
-                if (i==9) ImGui::SetNextDock(ImGuiDockSlot_Bottom);// optional
-                if(ImGui::BeginDock(tmp))  {
-                    ImGui::Text("Content of dock window %d goes here",i);
-                }
-                ImGui::EndDock();
-            }
-            ImGui::EndDockspace();
-        }
-        ImGui::End();*/
-
-        //docking test
-        {
-            //ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-            ImGui::SetNextWindowPos(ImVec2(0, 0));
-            const ImGuiWindowFlags flags =  (ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar);
-            const float oldWindowRounding = ImGui::GetStyle().WindowRounding;
-            ImGui::GetStyle().WindowRounding = 0;
-            const bool visible = ImGui::Begin("Fritters Playground Docking",NULL,flags);
-            ImGui::GetStyle().WindowRounding = oldWindowRounding;
-            if (visible) {
-                RC4Analytics();
-                RC4cipher();
-                HexStringConverter();
-            }
-            ImGui::End();
-        }
+        ImGui::DockSpaceOverViewport();//not needed but useful
+        RC4cipher();
+        HexStringConverter();
+        RC4Analytics();
 
         ImPlot::ShowDemoWindow();
 

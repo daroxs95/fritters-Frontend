@@ -99,14 +99,16 @@ int m_imgui_app(const char* name, std::function<void(void)> app_callback, ImVec4
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
 
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             app_callback();
         }
+        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        if (show_demo_window)
+            ImGui::ShowDemoWindow(&show_demo_window);
+
+
 
         // Rendering
         ImGui::EndFrame();
