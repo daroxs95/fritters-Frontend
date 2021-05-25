@@ -4,6 +4,8 @@ project(frittersFrontend VERSION 0.0.1)
 
 add_definitions( -DAPP_VERSION="${CMAKE_PROJECT_VERSION}" )
 
+#set(CMAKE_EXE_LINKER_FLAGS "-mconsole -v")#console mode app and
+
 include("collector/collector.cmake")#need to be after project()
 
 #set(FRESH_DOWNLOAD on)#this is for recloning collections on first time configuration, but is not recommended, cause is tampering the behavior of the cache variable with the same name
@@ -14,42 +16,76 @@ enable_testing()
 
 set (CMAKE_CXX_STANDARD 17)
 
-include_directories("imgui/imgui")
+include_directories("imgui")
+include_directories("imgui/imgui/libs/gl3w")#only for use the opengl loader gl3w that resides inside source, can be retireved 
 
-add_executable(frittersFrontend 
-              "main.cpp"
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    #set(GUI_TYPE WIN32)#i this this is not needed at least for sdl
+else()
+    add_definitions( -DSDL_MAIN_HANDLED )
+endif()
+
+add_executable(frittersFrontend ${GUI_TYPE}
+              "src/main.cpp"
               "imgui/imgui/imgui.cpp"
               "imgui/imgui/imgui_draw.cpp"
               "imgui/imgui/imgui_tables.cpp"#optional i think
               "imgui/imgui/imgui_widgets.cpp"
               #"imgui/imgui/imgui_impl_dx12.cpp"#optional
               #"imgui/imgui/imgui_impl_dx9.cpp"#optional
-              "imgui/imgui/imgui_impl_dx11.cpp"#optional
-              "imgui/imgui/imgui_impl_win32.cpp"#optional
+              #"imgui/imgui/imgui_impl_dx11.cpp"#optional
+              #"imgui/imgui/imgui_impl_win32.cpp"#optional
+              "imgui/imgui/imgui_impl_sdl.cpp"#optional
+              #"imgui/imgui/imgui_impl_glfw.cpp"#optional
+              "imgui/imgui/libs/gl3w/GL/gl3w.c"#optional, in the end will be used something external, with collector
+              #${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/share/gl3w/GL/gl3w.c#optional, not working, need to put it after created
+              "imgui/imgui/imgui_impl_opengl3.cpp"#optional
+              #"imgui/imgui/imgui_impl_vulkan.cpp"#optional
               "imgui/imgui/imgui_stdlib.cpp"#optional
               "imgui/imgui/imgui_demo.cpp"#optional
               "imgui/implot/implot.cpp"#optional
               "imgui/implot/implot_items.cpp"#optional
               "imgui/implot/implot_demo.cpp"#optional
+              "imgui/addons/imguifilesystem/imguifilesystem.cpp"#optional
               )
 
 collect( "https://github.com/PotatoBite/fritters" "v0.0.11" frittersFrontend )
 #collect( "E:/coding/Projects/github/PotatoBite/fritters" "v0.0.11" frittersFrontend )#development
 
-#find_package(SDL2 REQUIRED)
+#collect( "https://github.com/libsdl-org/SDL" "release-2.0.14" frittersFrontend )
+#collect( "https://github.com/skaslev/gl3w" "" frittersFrontend )#not needed for now, but is important to start using it
+#collect( "https://github.com/glfw/glfw" "3.3.4" frittersFrontend )#not needed for now, but is important to start using it
+
+#collect( "https://github.com/Rezonality/zep" "v0.1.12" frittersFrontend )
+
+
+if (WIN32)#Windows settings
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/cmake)#need to put this in the collecor module, right now is for finding SDL2
+elseif(UNIX AND NOT APPLE)#for linux only
+    list(APPEND CMAKE_PREFIX_PATH ${COLLECTOR_INSTALLS}/${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}/lib/cmake/SDL2)#need to put this in the collecor module, right now is for finding SDL2, this is for linux
+endif ()
+
+find_package(SDL2 REQUIRED)#need to check this after the collection are installed, at least in this moment, if not used this way linker throws some errors
+
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 
+
 include(CPack)
 
-#target_link_libraries (frittersFrontend PRIVATE fritters_static d3d9 xinput Imm32 Dwmapi jsoncpp_static)#for d3d9
-target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler Imm32 Dwmapi)#for d3d11
-#target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler jsoncpp_static)#for d3d11 msvc
-#target_link_libraries (frittersFrontend PRIVATE fritters_static d3d12 d3dcompiler Imm32 Dwmapi dxgi jsoncpp_static)#for d3d12
-#target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2::SDL2main SDL2::SDL2 jsoncpp_static)#for sdl_opengl3
-
-
+if (WIN32)       #Windows settings
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d9 xinput Imm32 Dwmapi jsoncpp_static)#for d3d9
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d11 d3dcompiler Imm32 Dwmapi)#for d3d11
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static d3d11 d3dcompiler shell32)#for d3d11 sdl
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static d3d12 d3dcompiler Imm32 Dwmapi dxgi jsoncpp_static)#for d3d12
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static ${Vulkan_LIBRARY} shell32 )#for sdl_vulkan
+    target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 )#for sdl_opengl3
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static glfw3 gdi32 opengl32 shell32 Imm32)#for glfw_opengl3
+elseif(UNIX AND NOT APPLE)#for linux only
+    #target_link_libraries (frittersFrontend PRIVATE fritters_static GL glfw3 X11 ${CMAKE_DL_LIBS} pthread)#for glfw_opengl3
+    target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2::SDL2main SDL2::SDL2)#for sdl_opengl3
+endif ()
 
 include(GNUInstallDirs)
 
@@ -66,15 +102,14 @@ set (RequiredExtras
     "passwords.txt"
     "imgui/fonts/Roboto-Medium.ttf"
 )
-
-#try to avoid this
+get_target_property(BINARY_EXECUTABLE_OUTPUT frittersFrontend RUNTIME_OUTPUT_DIRECTORY)
 foreach (_file ${RequiredExtras})
-        configure_file (
-      ${PROJECT_SOURCE_DIR}/${_file}
-      ${PROJECT_BINARY_DIR}/bin/${_file}
-      COPYONLY
-    )
+    list( APPEND extraFiles COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${PROJECT_SOURCE_DIR}/${_file}" "${BINARY_EXECUTABLE_OUTPUT}/$<CONFIG>/")
 endforeach()
+add_custom_command(TARGET frittersFrontend POST_BUILD
+                    ${extraFiles}
+)
+
 
 #preparing install step
 set_target_properties(frittersFrontend PROPERTIES RESOURCE "${RequiredExtras}")

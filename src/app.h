@@ -1,113 +1,26 @@
-#include <fritters/RC4.h>
-#include <fritters/utils.h>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <thread>
+#pragma once
 
-//#include "imgui/easy_imgui_dx9.h"
-//#include "imgui/easy_imgui_dx12.h"
-#include "imgui/easy_imgui_dx11.h"
-//#include "imgui/easy_imgui_sdl_gl3.h"
-#include "imgui/implot/implot.h"
-//#include "imgui/addons/imguiDock-master/imgui_dock.cpp"
-//#include "imgui/addons/imguidock/imguidock.cpp"
+#include <thread>
 
 #include "random_password.h"
 #include "crypto.h"
+#include "imgui_helppers.h"
+
+#include <implot/implot.h>
+#include <addons/imguifilesystem/imguifilesystem.h>
+#include <imgui/imgui.h>
+#include <imgui/imgui_stdlib.h>
+
+
+struct app_state
+{
+};
 
 //app functions
 void RC4Analytics();
 void RC4cipher();//RC4 cipher
 void HexStringConverter();//hex-string converter
 
-using namespace std;
-
-struct app_state
-{
-};
-
-static void app(app_state &app_state, ImVec4 &clear_color );
-
-int main(void)
-{
-    /*
-    {
-        static std::ifstream passwords_file;
-
-        static int number_of_passwords = 0;
-        static float occurrence_probability[256][256];
-
-        if (!passwords_file.is_open()) passwords_file.open("passwords.txt");
-
-        std::list<std::string> passwords;
-        {
-            number_of_passwords = 0;
-
-            std::string password;
-
-            while (!passwords_file.eof())
-            {
-                std::getline(passwords_file, password);
-                if (password != "")
-                {
-                    passwords.push_back(password);
-                    number_of_passwords++;
-                }
-            }
-            passwords_file.close();
-        }
-
-        static std::thread fillProbabilities(GetProbabilitiesRC4afterKSA, passwords, std::ref(occurrence_probability), number_of_passwords);
-        //GetProbabilitiesRC4afterKSA(passwords, std::ref(occurrence_probability), number_of_passwords);
-        fillProbabilities.join();
-        cout << "calculate successfully";
-    }
-    */
-
-    //create and fill state
-    app_state state;
-
-    srand((unsigned) time(0));//for generating random strings
-    
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    m_imgui_app("Fritters Playground", 
-        [&]()mutable->void{
-            app(state, clear_color);
-        }, 
-        clear_color,
-        [&](ImGuiIO &io)->void{
-            //basic imgui
-            ImGuiStyle& style = ImGui::GetStyle();
-
-            ImGui::StyleColorsClassic();
-            io.Fonts->AddFontFromFileTTF("imgui/fonts/Roboto-Medium.ttf", 15.0f);
-            //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,6.0f);
-            style.FrameRounding = 6.0f;
-            style.GrabRounding = style.FrameRounding;//make the slider get the same rounding
-
-            //colors
-            style.Colors[ImGuiCol_WindowBg]               = ImVec4(56.0 / 255.0, 54.0 / 255.0, 50.0 / 255.0, 1.0f);
-            style.Colors[ImGuiCol_TitleBg]                = ImVec4(0.43f, 0.43f, 0.43f, 0.39f);
-            style.Colors[ImGuiCol_TitleBgActive]          = ImVec4(0.17f, 0.17f, 0.17f, 0.39f);
-            
-            //enable docking, not sure if needed
-            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-            
-            //plot
-            ImPlot::CreateContext();
-            ImPlot::GetStyle().AntiAliasedLines = true;
-
-        },
-        [&]()->void{
-            //plot
-            ImPlot::DestroyContext();
-        },
-        true);
-
-    return 0;
-}
 
 static void app(app_state &state, ImVec4 &clear_color )
 {       
@@ -150,6 +63,7 @@ void RC4Analytics()//RC4 multicipher from file
             static float occurrence_probability[256][256];//holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
             static float occurrence_probability_theoretical[256][256];//calculated by theoretical formulae
             static int positions[] = {0};//position to get probability at, for each histogram showed, size is of max histograms
+            static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
             enum class CalculateFrom
             {
@@ -160,7 +74,7 @@ void RC4Analytics()//RC4 multicipher from file
 
 
             //TODO apply some check for validity of file and crossplatform stuff with std::path/filesystem, and the closing need to be checked too
-            if(!passwords_file.is_open()) passwords_file.open("passwords.txt");
+            if(!passwords_file.is_open()) passwords_file.open(pathToPasswordsFile);
             
             ImGui::Begin("RC4 S_0 analysis");//vanilla
             
@@ -168,6 +82,7 @@ void RC4Analytics()//RC4 multicipher from file
 
             if (ImGui::RadioButton("From file", calculateFrom == CalculateFrom::file)) { calculateFrom = CalculateFrom::file;} ImGui::SameLine();
             if (ImGui::RadioButton("From generated", calculateFrom == CalculateFrom::generated)) { calculateFrom = CalculateFrom::generated;} ImGui::SameLine();
+
 
             if(!calculating)
             {   
@@ -222,26 +137,47 @@ void RC4Analytics()//RC4 multicipher from file
                 ImGui::Text("Calculating");
             }
             
-            ImGui::SameLine();
+            //ImGui::SameLine();
             if(calculateFrom == CalculateFrom::generated)
             {
+                ImGui::PushItemWidth(ImGui::GetFontSize() * -13);
                 ImGui::InputInt("Number of passwords to generate ",&number_of_passwords);
             }
             else if(calculateFrom == CalculateFrom::file)
             {
                 ImGui::Text("Number of passwords analysed = %d", number_of_passwords);
+
+
+                // File browser:
+                const bool browseButtonPressed = ImGui::Button("...");// we need a trigger boolean variable
+                ImGui::SameLine();
+                HelpMarker("Select a file containing a list of passwords, and they must be splitted by newline");
+                ImGui::SameLine();
+                ImGui::Text("Chosen file: \"%s\"",pathToPasswordsFile);
+                if (ImGui::IsItemHovered())
+                    ImGui::SetTooltip(pathToPasswordsFile);
+
+
+                static ImGuiFs::Dialog dlg;// one per dialog (and must be static)
+                const char* chosenPath = dlg.chooseFileDialog(browseButtonPressed);// see other dialog types and the full list of arguments for advanced usage
+
+                // If you want to copy the (valid) returned path somewhere, you can use something like:
+                if (strlen(dlg.getChosenPath())>0) {
+                    strcpy(pathToPasswordsFile,dlg.getChosenPath());
+                }
             }
 
             //ImGui::PushItemWidth(ImGui::GetFontSize() * -1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
-            ImGui::PushItemWidth(-1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
 
             for (int i = 0; i < IM_ARRAYSIZE(positions); i++)
             {
-                ImGui::Text("Value of u");
-                ImGui::SameLine();
-                ImGui::SliderInt(std::to_string(i).c_str(), &positions[i], 0, 255);
-                //ImGui::InputInt(std::to_string(i).c_str(), &positions[i] );//change way of adding label for something more performant
+                ImGui::PushItemWidth(ImGui::GetFontSize() * -13);
 
+                ImGui::PushID(i);
+                ImGui::SliderInt("Value of u", &positions[i], 0, 255);//change way of adding label for something more performant
+                ImGui::PopID();
+
+                ImGui::PushItemWidth(-1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
                 if(ImGui::CollapsingHeader("Practical probability of each value to be at position u"))
                 {
                     //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
@@ -294,14 +230,14 @@ void RC4cipher()//RC4 cipher
 {
             ImGui::Begin("RC4 cipher");//vanilla
 
-            static string plaintext = "This is the plaintext";
-            static string password;
-            static string ciphertext = "This will be the ciphertext";
-            static string hex_ciphertext = "This will be the ciphertext";
+            static std::string plaintext = "This is the plaintext";
+            static std::string password;
+            static std::string ciphertext = "This will be the ciphertext";
+            static std::string hex_ciphertext = "This will be the ciphertext";
 
-            static string *S0_array;
-            static string dec_S0_array = "This is First State Array S[0]";
-            static string hex_S0_array = "This is First State Array S[0]";
+            static std::string *S0_array;
+            static std::string dec_S0_array = "This is First State Array S[0]";
+            static std::string hex_S0_array = "This is First State Array S[0]";
 
             static uint8_t tmepS0array[256];
             static std::stringstream tempStream;
@@ -327,7 +263,7 @@ void RC4cipher()//RC4 cipher
 
 
 
-            if(ImGui::InputTextWithHint("","password", &password))
+            if(ImGui::InputTextWithHint("Password","password", &password))
             {
                 if(password.length() > 0)
                 {
@@ -361,7 +297,7 @@ void RC4cipher()//RC4 cipher
 
             ImGui::InputTextMultiline("First State Array", S0_array, ImVec2(0,60),ImGuiInputTextFlags_ReadOnly);
 
-            if (ImGui::InputTextMultiline("plaintext", &plaintext, ImVec2(0,60)))
+            if (ImGui::InputTextMultiline("Plaintext", &plaintext, ImVec2(0,60)))
             {
                 if(password.length() > 0)
                 {
@@ -373,7 +309,7 @@ void RC4cipher()//RC4 cipher
                 }
             }
 
-            if (ImGui::InputTextMultiline("ciphertext", &ciphertext, ImVec2(0,60),ImGuiInputTextFlags_CharsHexadecimal))
+            if (ImGui::InputTextMultiline("Ciphertext", &ciphertext, ImVec2(0,60),ImGuiInputTextFlags_CharsHexadecimal))
             {
                 if(password.length() > 0)
                 {
@@ -390,8 +326,8 @@ void HexStringConverter()//hex-string converter
 {
             ImGui::Begin("Hex-string converter");
 
-            static string ascii_string = "This is the string to convert to hex-string";
-            static string hex_string = "This is the string to convert to hex-string";
+            static std::string ascii_string = "This is the string to convert to hex-string";
+            static std::string hex_string = "This is the string to convert to hex-string";
 
             ImGui::PushItemWidth(ImGui::GetFontSize() * -10);           // Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
 

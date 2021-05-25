@@ -1,1 +1,2 @@
--RC4 cipher is not working after some change i made
+-change the use of `std::function<...>` for something like `void (*read)(void *fd, char *buffer, int size);` c style, to make the general thing usable from c
+-in ubuntu mate using glfw shows a lot of missbehavior in the windows, so start using SDL2 for all platforms, and maybe drop support for glfw
