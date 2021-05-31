@@ -19,6 +19,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 include_directories("imgui")
 include_directories("3rdParty/NFD/include")
+include_directories("3rdParty")
 include_directories("imgui/imgui/libs/gl3w")#only for use the opengl loader gl3w that resides inside source, can be retireved 
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
@@ -27,14 +28,22 @@ else()
     add_definitions( -DSDL_MAIN_HANDLED )
 endif()
 
+#selecting platform specific files for NFD
+if (WIN32)#Windows settings
+    list(APPEND NFD_SOURCES "3rdParty/NFD/nfd_win.cpp")
+elseif(UNIX AND NOT APPLE)#for linux only
+    list(APPEND NFD_SOURCES "3rdParty/NFD/nfd_gtk.c")
+endif ()
+list(APPEND NFD_SOURCES "3rdParty/NFD/nfd_common.c")
+
+
 add_executable(frittersFrontend ${GUI_TYPE}
               "src/main.cpp"
               "imgui/imgui/imgui.cpp"
               "imgui/imgui/imgui_draw.cpp"
               "imgui/imgui/imgui_tables.cpp"#optional i think
               "imgui/imgui/imgui_widgets.cpp"
-              "3rdParty/NFD/nfd_win.cpp"#optional for native file dialog
-              "3rdParty/NFD/nfd_common.c"#optional for native file dialog
+              ${NFD_SOURCES}#optional for native file dialog
               #"imgui/imgui/imgui_impl_dx12.cpp"#optional
               #"imgui/imgui/imgui_impl_dx9.cpp"#optional
               #"imgui/imgui/imgui_impl_dx11.cpp"#optional

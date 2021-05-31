@@ -6,7 +6,8 @@
 
 #include "random_password.h"
 #include "crypto.h"
-#include "imgui_helppers.h"
+#include "imgui_helpers.h"
+#include "gl_helpers.h"
 
 #include <implot/implot.h>
 #include <addons/imguifilesystem/imguifilesystem.h>
@@ -19,12 +20,12 @@ struct app_state
 };
 
 //app functions
-void RC4Analytics(ImGuiIO &io);
+void RC4Analytics(ImGuiIO &io, SDL_Window* window);
 void RC4cipher();//RC4 cipher
 void HexStringConverter();//hex-string converter
 
 
-static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io)
+static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window* window)
 {       
         /*
         //basic example
@@ -51,13 +52,13 @@ static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io)
         ImGui::DockSpaceOverViewport();//not needed but useful
         RC4cipher();
         HexStringConverter();
-        RC4Analytics(io);
+        RC4Analytics(io, window);
 
         ImPlot::ShowDemoWindow();
 
 }
 
-void RC4Analytics(ImGuiIO &io)//RC4 multicipher from file
+void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
 {
 
             //menus
@@ -283,7 +284,7 @@ void RC4Analytics(ImGuiIO &io)//RC4 multicipher from file
                     ImVec2 size = ImGui::GetMainViewport()->Size;
                     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
                     ImGui::SetNextWindowSize(size);
-                    ImGui::BeginPopupModal("Fullscreen");//render the widget in a modal
+                    ImGui::BeginPopupModal("Fullscreen",NULL, ImGuiWindowFlags_NoTitleBar);//render the widget in a modal
                 }
                 ImPlot::SetNextPlotLimits(0,256,0,0.008);
                 if (ImPlot::BeginPlot("Positions against its probability to end at position u(ie P(S[u]=x)","x","P(S[u]=x)")) 
@@ -311,13 +312,51 @@ void RC4Analytics(ImGuiIO &io)//RC4 multicipher from file
                     ImPlot::EndPlot();
                 }
                 
-                if (showPlotFullscreen && ImGui::Button("Close", ImVec2(120, 0))) 
-                { 
-                    //ImGui::CloseCurrentPopup(); //not needed for now
-                    showPlotFullscreen = false;
-                    ImGui::EndPopup();
+                if (showPlotFullscreen)
+                {
+                    ImVec2 temp = ImGui::GetItemRectSize();
+
+                    if(ImGui::Button("Save image"))
+                    {
+                        /*
+                        SDL_Renderer *r_copie=SDL_GetRenderer(window);
+                        SDL_Surface *sshot = SDL_CreateRGBSurface(0, 800, 800, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
+                        SDL_LockSurface(sshot);
+                        SDL_RenderReadPixels(r_copie, NULL, SDL_PIXELFORMAT_ARGB8888, sshot->pixels, sshot->pitch);
+                        SDL_SaveBMP(sshot, "screenshot.bmp");
+                        SDL_UnlockSurface(sshot);
+                        SDL_FreeSurface(sshot);
+                        */
+
+                        nfdchar_t *outPath = NULL;
+                        nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
+                            
+                        if ( result == NFD_OKAY ) {
+                            printf("\n\tSuccessfully selected output file: %s \n", outPath);
+                            //puts(outPath);
+                            //strcpy(pathToPasswordsFile,outPath);
+                            free(outPath);
+                            saveImage(outPath,temp[0], temp[1],0,ImGui::GetWindowSize()[1] - temp[1]);
+
+                        }
+                        else if ( result == NFD_CANCEL ) {
+                            printf("\n\tUser pressed cancel.\n");
+                        }
+                        else {
+                            printf("\n\tError: %s\n", NFD_GetError() );
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Close", ImVec2(120, 0))) 
+                    { 
+                        //ImGui::CloseCurrentPopup(); //not needed for now
+                        showPlotFullscreen = false;
+                        //ImGui::EndPopup();
+                    }
+
+                    ImGui::EndPopup();//end the modal where the widget is being rendered
                 }
-                if (showPlotFullscreen) ImGui::EndPopup();//end the modal where the widget is being rendered
+
 
 
                 //This is a context menu(control click) to change the view of the widget to a modal, need to be after the EndPopup() from the modal containing the widget, because the assignation being done here of bool variable holding if the widget is currently rendered in modal form or embebed in the windows.
@@ -351,6 +390,7 @@ void RC4Analytics(ImGuiIO &io)//RC4 multicipher from file
                     ImGui::EndTable();
                 }
             }*/
+            
 
             ImGui::End();//vanilla
 }

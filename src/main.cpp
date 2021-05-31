@@ -24,6 +24,8 @@
 //#include "imgui/addons/imguiDock-master/imgui_dock.cpp"
 //#include "imgui/addons/imguidock/imguidock.cpp"
 #include "app.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include <stb/stb_image_write.h>
 
 using namespace std;
 
@@ -69,8 +71,8 @@ int main(void)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     m_imgui_app("Fritters Playground", 
-        [&](ImGuiIO &io)mutable->void{
-            app(state, clear_color, io);
+        [&](ImGuiIO &io, SDL_Window* window)mutable->void{
+            app(state, clear_color, io, window);
         }, 
         clear_color,
         [&](ImGuiIO &io)->void{
@@ -90,7 +92,7 @@ int main(void)
             style.Colors[ImGuiCol_TitleBgActive]          = ImVec4(0.17f, 0.17f, 0.17f, 0.39f);
             //theme light
             ImGui::StyleColorsLight();
-            style.FrameBorderSize = 1;
+            //style.FrameBorderSize = 1;
 
             //enable docking, not sure if needed
             ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;

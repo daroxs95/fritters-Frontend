@@ -4,3 +4,4 @@
 -a lot of things changed so only backend currently working is sdl2 and opengl3
 -fix the cmakelist to compile the source for NFD in each platform, and fallback to imgui file dialog if not supported platform.
 -fix app freezes when opened NFD
+-make zoom and save to image available to any widget
