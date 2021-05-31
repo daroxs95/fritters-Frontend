@@ -328,6 +328,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                         SDL_FreeSurface(sshot);
                         */
 
+                        saveImage("temp.png",temp[0], temp[1],1,ImGui::GetWindowSize()[1] - temp[1] -1);//there are 1pixel of diference for the border, need to generalize that better
+
+                        /*
                         nfdchar_t *outPath = NULL;
                         nfdresult_t result = NFD_SaveDialog( NULL, NULL, &outPath );
                             
@@ -336,7 +339,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                             //puts(outPath);
                             //strcpy(pathToPasswordsFile,outPath);
                             free(outPath);
-                            saveImage(outPath,temp[0], temp[1],0,ImGui::GetWindowSize()[1] - temp[1]);
+                            saveImage(outPath,temp[0], temp[1],1,ImGui::GetWindowSize()[1] - temp[1] -1);//there are 1pixel of diference for the border, need to generalize that better
 
                         }
                         else if ( result == NFD_CANCEL ) {
@@ -345,7 +348,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                         else {
                             printf("\n\tError: %s\n", NFD_GetError() );
                         }
+                        */
                     }
+
                     ImGui::SameLine();
                     if (ImGui::Button("Close", ImVec2(120, 0))) 
                     { 

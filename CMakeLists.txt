@@ -65,7 +65,6 @@ add_executable(frittersFrontend ${GUI_TYPE}
 #collect( "https://github.com/PotatoBite/fritters" "v0.0.11" frittersFrontend )
 collect( "E:/coding/Projects/PotatoBite/fritters" "v0.0.12" frittersFrontend )#development
 
-collect( "https://github.com/libsdl-org/SDL" "release-2.0.14" frittersFrontend )
 #collect( "D:/collector/_SDL-03e69d826e7dd77f343b1140fa34b9e803725f52" "release-2.0.14" frittersFrontend )
 #collect( "https://github.com/skaslev/gl3w" "" frittersFrontend )#not needed for now, but is important to start using it
 #collect( "https://github.com/glfw/glfw" "3.3.4" frittersFrontend )#not needed for now, but is important to start using it
@@ -108,6 +107,7 @@ endif ()
 
 find_package(SDL2)#need to check this after the collection are installed, at least in this moment, if not used this way linker throws some errors
 if(NOT ${SDL2_FOUND})
+    collect( "https://github.com/libsdl-org/SDL" "release-2.0.14" frittersFrontend )
     #rerun cmake in initial build
     #will update cmakecache/project files on first build
     #so you may have to reload project after first build
