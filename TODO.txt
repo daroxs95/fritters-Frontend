@@ -1,2 +1,6 @@
 -change the use of `std::function<...>` for something like `void (*read)(void *fd, char *buffer, int size);` c style, to make the general thing usable from c
 -in ubuntu mate using glfw shows a lot of missbehavior in the windows, so start using SDL2 for all platforms, and maybe drop support for glfw
+-set help text about commands and stuff, also rework the context actions like zoom and tooltips(like to say on a tooltip when is posible to zoom)
+-a lot of things changed so only backend currently working is sdl2 and opengl3
+-fix the cmakelist to compile the source for NFD in each platform, and fallback to imgui file dialog if not supported platform.
+-fix app freezes when opened NFD

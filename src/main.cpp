@@ -29,8 +29,7 @@ using namespace std;
 
 int main(void)
 {
-    /*
-    {
+    /*{
         static std::ifstream passwords_file;
 
         static int number_of_passwords = 0;
@@ -60,8 +59,7 @@ int main(void)
         //GetProbabilitiesRC4afterKSA(passwords, std::ref(occurrence_probability), number_of_passwords);
         fillProbabilities.join();
         cout << "calculate successfully";
-    }
-    */
+    }*/
 
     //create and fill state
     app_state state;
@@ -71,31 +69,36 @@ int main(void)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     m_imgui_app("Fritters Playground", 
-        [&]()mutable->void{
-            app(state, clear_color);
+        [&](ImGuiIO &io)mutable->void{
+            app(state, clear_color, io);
         }, 
         clear_color,
         [&](ImGuiIO &io)->void{
             //basic imgui
             ImGuiStyle& style = ImGui::GetStyle();
 
-            ImGui::StyleColorsClassic();
             io.Fonts->AddFontFromFileTTF("Roboto-Medium.ttf", 15.0f);
             //ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding,6.0f);
             style.FrameRounding = 6.0f;
             style.GrabRounding = style.FrameRounding;//make the slider get the same rounding
 
             //colors
+            //theme dark mine
+            ImGui::StyleColorsClassic();
             style.Colors[ImGuiCol_WindowBg]               = ImVec4(56.0 / 255.0, 54.0 / 255.0, 50.0 / 255.0, 1.0f);
             style.Colors[ImGuiCol_TitleBg]                = ImVec4(0.43f, 0.43f, 0.43f, 0.39f);
             style.Colors[ImGuiCol_TitleBgActive]          = ImVec4(0.17f, 0.17f, 0.17f, 0.39f);
-            
+            //theme light
+            ImGui::StyleColorsLight();
+            style.FrameBorderSize = 1;
+
             //enable docking, not sure if needed
             ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             
             //plot
             ImPlot::CreateContext();
             ImPlot::GetStyle().AntiAliasedLines = true;
+            ImPlot::GetStyle().Colormap = ImPlotColormap_Dark;
 
         },
         [&]()->void{
