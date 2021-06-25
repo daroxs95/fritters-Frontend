@@ -7,22 +7,12 @@
 #ifndef APP_VERSION
 # define APP_VERSION "0.0.0"
 #endif
-//#define SDL_MAIN_HANDLED//not needed in msvc,need to enable this from cmake, now is needed in msvc, wtf
-//#define RC_INVOKED//this should't be done
-
-#ifndef APP_VERSION
-# define APP_VERSION "0.0.0"
+#ifndef COMPILER_SPEC
+# define COMPILER_SPEC "UNDEFINED"
 #endif
 
-//#include "imgui/easy_imgui_dx9.h"
-//#include "imgui/easy_imgui_dx12.h"
-//#include <easy_imgui_dx11.h>
-//#include <easy_imgui_sdl_vulkan.h>
-//#include <easy_imgui_glfw_gl3.h>
 #include <easy_imgui_sdl_gl3.h>
-//#include <easy_imgui_sdl_dx11.h>
-//#include "imgui/addons/imguiDock-master/imgui_dock.cpp"
-//#include "imgui/addons/imguidock/imguidock.cpp"
+
 #include "app.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>

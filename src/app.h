@@ -5,16 +5,19 @@
 #include <stdlib.h>
 #include <filesystem>
 
-#include "random_password.h"
-#include "crypto.h"
-#include "imgui_helpers.h"
-#include "gl_helpers.h"
-
 #include <implot/implot.h>
 #include <addons/imguifilesystem/imguifilesystem.h>
 #include <imgui/imgui.h>
 #include <imgui/imgui_stdlib.h>
 #include <nfd.h>
+
+
+#include "random_password.h"
+#include "crypto.h"
+#include "imgui_helpers.h"
+#include "gl_helpers.h"
+#include "about.h"
+
 
 struct app_state
 {
@@ -59,22 +62,23 @@ static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window*
 
 }
 
-void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
+void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              //RC4 multicipher from file
 {
 
             //menus
             static bool calcSarkar = true;
             static bool calcBase = true;
+            static bool showAbout = false;
 
             static std::ifstream passwords_file;
             static bool calculating = false;
             static int number_of_passwords = 0;
-            static float occurrence_probability[256][256];//holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-            static float occurrence_probability_theoretical[256][256];//calculated by theoretical formulae
-            static float occurrence_probability_theoretical_Sarkar[256][256];//calculated by theoretical formulae by Sarkar
-            static long double mse_base[256];//mean square error of base theoretical probability
-            static long double mse_Sarkar[256];//mean square error of Sarkar theoretical probability
-            static int positions[] = {0};//position to get probability at, for each histogram showed, size is of max histograms
+            static float occurrence_probability[256][256];                      //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
+            static float occurrence_probability_theoretical[256][256];          //calculated by theoretical formulae
+            static float occurrence_probability_theoretical_Sarkar[256][256];   //calculated by theoretical formulae by Sarkar
+            static long double mse_base[256];                                   //mean square error of base theoretical probability
+            static long double mse_Sarkar[256];                                 //mean square error of Sarkar theoretical probability
+            static int positions[] = {0};                                       //position to get probability at, for each histogram showed, size is of max histograms
             static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
             enum class CalculateFrom
@@ -108,10 +112,17 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                     // ImGui::MenuItem("About Dear ImGui", NULL, &show_app_about);
                     ImGui::EndMenu();
                 }
+                if (ImGui::BeginMenu("Help"))
+                {
+                    // ImGui::MenuItem("Metrics/Debugger", NULL, &show_app_metrics);
+                    // ImGui::MenuItem("Style Editor", NULL, &show_app_style_editor);
+                    ImGui::MenuItem("About", NULL, &showAbout);
+                    ImGui::EndMenu();
+                }
                 ImGui::EndMenuBar();
             }
 
-
+            if (showAbout) about(&showAbout);
 
             ImGui::Text("RC4 each possible value's probability to be in position u at first S(State Array) after KSA");
 
@@ -249,15 +260,31 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                 if(ImGui::CollapsingHeader("Practical probability of each value to be at position u"))
                 {
                     //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
-                    ImGui::PlotHistogram("", occurrence_probability[positions[i]], IM_ARRAYSIZE(occurrence_probability[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability[positions[i]],256), ImVec2(0,80));
+                    ImGui::PlotHistogram("", 
+                                        occurrence_probability[positions[i]], 
+                                        IM_ARRAYSIZE(occurrence_probability[positions[i]]), 
+                                        0, 
+                                        NULL, 
+                                        0.001f, 
+                                        get_max(occurrence_probability[positions[i]],256), 
+                                        ImVec2(0,80)
+                                    );
                 }
 
                 if(calcBase)
                 {
                     if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u"))
                     {
-                        ImGui::PlotHistogram("", occurrence_probability_theoretical[positions[i]], IM_ARRAYSIZE(occurrence_probability_theoretical[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability_theoretical[positions[i]],256), ImVec2(0,80));
-                        ImGui::Text("Mean Square Error = %e", mse_base[positions[i]]);
+                        ImGui::PlotHistogram("", 
+                                            occurrence_probability_theoretical[positions[i]], 
+                                            IM_ARRAYSIZE(occurrence_probability_theoretical[positions[i]]), 
+                                            0, 
+                                            NULL, 
+                                            0.001f, 
+                                            get_max(occurrence_probability_theoretical[positions[i]],256), 
+                                            ImVec2(0,80)
+                                        );
+                        ImGui::Text( "Mean Square Error = %e", mse_base[positions[i]] );
                     }
                 }
 
@@ -265,7 +292,15 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                 {
                     if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u, using Sarkar formulae"))
                     {
-                        ImGui::PlotHistogram("", occurrence_probability_theoretical_Sarkar[positions[i]], IM_ARRAYSIZE(occurrence_probability_theoretical_Sarkar[positions[i]]), 0, NULL, 0.001f, get_max(occurrence_probability_theoretical_Sarkar[positions[i]],256), ImVec2(0,80));
+                        ImGui::PlotHistogram("", 
+                                            occurrence_probability_theoretical_Sarkar[positions[i]], 
+                                            IM_ARRAYSIZE(occurrence_probability_theoretical_Sarkar[positions[i]]), 
+                                            0, 
+                                            NULL, 
+                                            0.001f, 
+                                            get_max(occurrence_probability_theoretical_Sarkar[positions[i]],256), 
+                                            ImVec2(0,80)
+                                        );
                         ImGui::Text("Mean Square Error = %e", mse_Sarkar[positions[i]]);
                     }
                 }
@@ -370,7 +405,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)//RC4 multicipher from file
                 if (!showPlotFullscreen && 
                     io.KeyCtrl &&
                     ImGui::BeginPopupContextItem("Positions against its probability to end at position u(ie P(S[u]=x)",
-                    ImGuiPopupFlags_MouseButtonLeft)) // <-- use last item id as popup id
+                    ImGuiPopupFlags_MouseButtonLeft))
                 {
                         ImGui::CloseCurrentPopup();
                         showPlotFullscreen = true;
@@ -405,14 +440,14 @@ void RC4cipher()//RC4 cipher
 {
             ImGui::Begin("RC4 cipher");//vanilla
 
-            static std::string plaintext = "This is the plaintext";
+            static std::string plaintext                = "This is the plaintext";
             static std::string password;
-            static std::string ciphertext = "This will be the ciphertext";
-            static std::string hex_ciphertext = "This will be the ciphertext";
+            static std::string ciphertext               = "This will be the ciphertext";
+            static std::string hex_ciphertext           = "This will be the ciphertext";
 
             static std::string *S0_array;
-            static std::string dec_S0_array = "This is First State Array S[0]";
-            static std::string hex_S0_array = "This is First State Array S[0]";
+            static std::string dec_S0_array             = "This is First State Array S[0]";
+            static std::string hex_S0_array             = "This is First State Array S[0]";
 
             static uint8_t tmepS0array[256];
             static std::stringstream tempStream;
@@ -434,7 +469,7 @@ void RC4cipher()//RC4 cipher
             }
             
 
-            ImGui::PushItemWidth(ImGui::GetFontSize() * -10);           // Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
+            ImGui::PushItemWidth(ImGui::GetFontSize() * -10);               // Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
 
 
 
@@ -444,17 +479,17 @@ void RC4cipher()//RC4 cipher
                 {
                     RC4 cipher(password);
                     
-                    cipher.getStateArray(tmepS0array);//get the S[0] array
+                    cipher.getStateArray(tmepS0array);                      //get the S[0] array
                     
                     //convert S[0] array to string
-                    tempStream.str(std::string());//clearing the stream
+                    tempStream.str(std::string());                          //clearing the stream
                     for (size_t i = 0; i < 256; i++)
                     {
                         tempStream << tmepS0array[i];
                     }
                     hex_S0_array = string2hexstring(tempStream.str());
                     
-                    tempStream.str(std::string());//clearing the stream
+                    tempStream.str(std::string());                          //clearing the stream
                     for (size_t i = 0; i < 256; i++)
                     {
                         tempStream << (unsigned int)tmepS0array[i] << " ";
@@ -502,7 +537,7 @@ void HexStringConverter()//hex-string converter
             ImGui::Begin("Hex-string converter");
 
             static std::string ascii_string = "This is the string to convert to hex-string";
-            static std::string hex_string = "This is the string to convert to hex-string";
+            static std::string hex_string   = "This is the string to convert to hex-string";
 
             ImGui::PushItemWidth(ImGui::GetFontSize() * -10);           // Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
 
