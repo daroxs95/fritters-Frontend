@@ -64,6 +64,11 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #  run: ctest -C $BUILD_TYPE    
 
+    - uses: papeloto/action-zip@v1
+      with:
+        files: tempApp/
+        dest: app.zip
+
     - name: Get release
       id: get_release
       uses: bruceadams/get-release@v1.2.2
@@ -77,9 +82,9 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: tempApp
-        asset_name: LinuxGTK
-        asset_content_type: application/apk
+        asset_path: app.zip
+        asset_name: LinuxGTK3.zip
+        asset_content_type: application/zip
 
   build_windows:
     runs-on: windows-latest
@@ -129,6 +134,11 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #  run: ctest -C $BUILD_TYPE    
 
+    - uses: papeloto/action-zip@v1
+      with:
+        files: tempApp/
+        dest: app.zip
+
     - name: Get release
       id: get_release
       uses: bruceadams/get-release@v1.2.2
@@ -142,6 +152,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: tempApp
-        asset_name: Windows
-        asset_content_type: application/apk
+        asset_path: app.zip
+        asset_name: Windows.zip
+        asset_content_type: application/zip
