@@ -26,13 +26,16 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
             //menus
             static bool calcSarkar = true;
-            static bool calcBase = true;
+            static bool calcPracticeCustomKeys = true;
+            static bool calcPracticeAllKeys = true;
+            static bool calcBase  = true;
+
             static bool showAbout = false, showHelp = false;
+
 
             static std::ifstream passwords_file;
             static bool calculating = false;
-            static int number_of_passwords = 0;
-            static float occurrence_probability[256][256];                      //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
+            static int number_of_passwords = 0;                   
             static float occurrence_probability_theoretical[256][256];          //calculated by theoretical formulae
             static float occurrence_probability_theoretical_Sarkar[256][256];   //calculated by theoretical formulae by Sarkar
             static long double mse_base[256];                                   //mean square error of base theoretical probability
@@ -40,11 +43,13 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static int positions[] = {0};                                       //position to get probability at, for each histogram showed, size is of max histograms
             static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
+            //struct of base calculation type of probabilities after KSA in practice, any type of calculation needed experimentally
+            //should be doable using this
             struct RC4_calc_instance_in_practice
             {
-                char id[20];
-                float occurrence_probability[256][256]; 
-                std::function<void(std::string &)> getPassword;
+                char id[20];                                                    //id for each calculation
+                float occurrence_probability[256][256];                         //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
+                std::function<void(std::string &)> getPassword;                 //function to know distribution of key(it generates keys with determined distribution)
             };
             
             struct RC4_calc_instance_theoretical
@@ -58,12 +63,18 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 RC4_calc_instance_in_practice(),
                 RC4_calc_instance_in_practice() 
                 };
-                
+
             //put this in some conditional to no execute it every time in the main loop
-            strcpy(practiceProbabilities[0].id, "Full random password");
-            practiceProbabilities[0].getPassword = [](std::string &passwordToFill)->void{
-                passwordToFill = getRandomString(32);
-            };
+            static bool inited = false;
+            if (!inited)
+            {
+                strcpy(practiceProbabilities[0].id, "Full random password");
+                practiceProbabilities[0].getPassword = [](std::string &passwordToFill)->void{
+                    passwordToFill = getRandomString(32);
+                };
+                inited = true;
+            }
+
 
 
             enum class CalculateFrom
@@ -88,6 +99,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 {
                     ImGui::MenuItem("Shows calcs by Goutam Paul,Subhamoy Maitra, Rohit Srivastava", NULL, &calcBase);
                     ImGui::MenuItem("Shows calcs by Sarkar/Mantin formulae", NULL, &calcSarkar);
+                    ImGui::MenuItem("Shows calcs experimentally using uniformly distributed keys", NULL, &calcPracticeAllKeys);
+                    ImGui::MenuItem("Shows calcs experimentally using custom distributed keys", NULL, &calcPracticeCustomKeys);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Tools"))
@@ -119,6 +132,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
             if(!calculating)
             {   
+                
                 if (ImGui::Button("Calculate"))
                 {   
                     calculating = true;
@@ -159,13 +173,31 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             }
                         }
                         
-                        GetProbabilitiesRC4afterKSA(passwords, occurrence_probability, number_of_passwords);
+                        std::string tempPass = "";
+
+                        for (size_t i = 0 ; i < number_of_passwords; i++)
+                        {
+                            practiceProbabilities[0].getPassword(tempPass);
+                            //tempPass = getRandomString(32);
+                            FillOcurrencesafterKSA(practiceProbabilities[0].occurrence_probability, tempPass );
+                        }
+                               
+                        for (int i = 0; i < 256; i++)
+                        {
+                            arrayOccurrences2probabilities(
+                                practiceProbabilities[0].occurrence_probability[i], 
+                                practiceProbabilities[0].occurrence_probability[i],
+                                256,
+                                number_of_passwords
+                                );
+                        }
+                        
                         GetRealProbabilitiesRC4afterKSA(occurrence_probability_theoretical);
                         GetRealProbabilitiesRC4afterKSA_SARKAR(occurrence_probability_theoretical_Sarkar);
                         for (short i = 0; i < 256; i++)
                         {
-                            mse_base[i] = calcMSE(occurrence_probability_theoretical[i],occurrence_probability[i],256);
-                            mse_Sarkar[i] = calcMSE(occurrence_probability_theoretical_Sarkar[i],occurrence_probability[i],256);
+                            mse_base[i] = calcMSE(occurrence_probability_theoretical[i],practiceProbabilities[0].occurrence_probability[i],256);
+                            mse_Sarkar[i] = calcMSE(occurrence_probability_theoretical_Sarkar[i],practiceProbabilities[0].occurrence_probability[i],256);
                         }
                         
                         calculating = false;
@@ -244,20 +276,20 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 ImGui::PopID();//i thin this should be the whole for loop
 
                 ImGui::PushItemWidth(-1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
-                if(ImGui::CollapsingHeader("Practical probability of each value to be at position u"))
+                
+                if(ImGui::CollapsingHeader("Practical probability of each value to be at position u with uniformly distributed keys"))
                 {
                     //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
                     ImGui::PlotHistogram("", 
-                                        occurrence_probability[positions[i]], 
-                                        IM_ARRAYSIZE(occurrence_probability[positions[i]]), 
+                                        practiceProbabilities[0].occurrence_probability[positions[i]], 
+                                        IM_ARRAYSIZE(practiceProbabilities[0].occurrence_probability[positions[i]]), 
                                         0, 
                                         NULL, 
                                         0.001f, 
-                                        get_max(occurrence_probability[positions[i]],256), 
+                                        get_max(practiceProbabilities[0].occurrence_probability[positions[i]],256), 
                                         ImVec2(0,80)
                                     );
                 }
-
                 if(calcBase)
                 {
                     if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u"))
@@ -314,9 +346,12 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 {
 
                     ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
-                    ImPlot::PlotShaded("Probabilities after KSA in practice", occurrence_probability[positions[i]], 256, 0);
-                    ImPlot::PlotLine("Probabilities after KSA in practice", occurrence_probability[positions[i]], 256);
-                                    
+                    
+                    if(calcPracticeAllKeys)
+                    {           
+                        ImPlot::PlotShaded("Probabilities after KSA in practice new", practiceProbabilities[0].occurrence_probability[positions[i]], 256, 0);
+                        ImPlot::PlotLine("Probabilities after KSA in practice new", practiceProbabilities[0].occurrence_probability[positions[i]], 256);
+                    }
 
                     if(calcBase)
                     {

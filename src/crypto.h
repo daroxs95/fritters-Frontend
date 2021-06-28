@@ -5,7 +5,8 @@
 #include <list>
 #include <cmath>
 
-void arrayOccurrences2probabilities(int occurrences[], float probabilities[], int arr_size, int number_of_experiments)
+template<typename T>
+void arrayOccurrences2probabilities(const T occurrences[], float probabilities[],const int arr_size, const int number_of_experiments)
 {
     for (size_t i = 0; i < arr_size; i++)
     {
@@ -34,7 +35,7 @@ T get_max(const T array[], int array_size)
  */
 void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][256])
 {
-    RC4 cipher("password");//just for initialize a cipher instance, not really using that password, well if is in file yes,lol
+    RC4 cipher("password");//just for initialize a cipher instance, not really using that password, well if is in list yes,lol
     uint8_t temp_state_array[256];
     
     for(auto password: passwords)
@@ -73,6 +74,24 @@ void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float 
     {
         arrayOccurrences2probabilities(occurrences[i], occurrence_probability[i], 256, number_of_experiments);
     }
+}
+
+/**
+ * @brief Fills the array `occurrence_probability` with the number of ocurrences for each value after 
+ * the KSA step of RC4 using `password`
+ * 
+ * @param occurrence_probability 
+ * @param password 
+ */
+void FillOcurrencesafterKSA(float occurrence_probability[256][256],const std::string password)
+{
+        RC4 cipher(password);
+        uint8_t temp_state_array[256];
+        cipher.getStateArray(temp_state_array);
+        for (size_t i = 0; i < 256; i++)
+        {
+            occurrence_probability[i][temp_state_array[i]]++;
+        }
 }
 
 /**
