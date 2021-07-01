@@ -60,4 +60,6 @@ static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window*
 
         ImPlot::ShowDemoWindow();
 
+        //std::cout<< getRandomStringCustomDistribution(32) << std::endl;
+
 }

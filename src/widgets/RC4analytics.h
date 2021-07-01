@@ -12,10 +12,10 @@
 #include <nfd.h>
 #include <SDL2/SDL.h>
 
-#include "random_password.h"
-#include "crypto.h"
-#include "imgui_helpers.h"
-#include "gl_helpers.h"
+#include "../random_password.h"
+#include "../crypto.h"
+#include "../imgui_helpers.h"
+#include "../gl_helpers.h"
 
 #include "About.h"
 #include "Help.h"
@@ -47,30 +47,40 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             //should be doable using this
             struct RC4_calc_instance_in_practice
             {
-                char id[20];                                                    //id for each calculation
+                char id[100];                                                    //id for each calculation
                 float occurrence_probability[256][256];                         //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-                std::function<void(std::string &)> getPassword;                 //function to know distribution of key(it generates keys with determined distribution)
+                std::function<std::string()> getPassword;                       //function to know distribution of key(it generates keys with determined distribution)
             };
             
             struct RC4_calc_instance_theoretical
             {
-                char id[20];
+                char id[100];
                 float occurrence_probability[256][256]; 
                 std::function<double(uint8_t u, uint8_t v)> getProbability;
             };
 
+            /*
+            //this looks ugly, need to refactor
             static std::vector<RC4_calc_instance_in_practice> practiceProbabilities = { 
                 RC4_calc_instance_in_practice(),
                 RC4_calc_instance_in_practice() 
                 };
+            */
+            static std::vector<RC4_calc_instance_in_practice> practiceProbabilities;//cant decide if is better this way or as above
+            practiceProbabilities.resize(2);
 
             //put this in some conditional to no execute it every time in the main loop
             static bool inited = false;
             if (!inited)
             {
                 strcpy(practiceProbabilities[0].id, "Full random password");
-                practiceProbabilities[0].getPassword = [](std::string &passwordToFill)->void{
-                    passwordToFill = getRandomString(32);
+                practiceProbabilities[0].getPassword = []()->std::string{
+                    return getRandomString(32);
+                };
+
+                strcpy(practiceProbabilities[1].id, "Full random password custom distribution");
+                practiceProbabilities[1].getPassword = []()->std::string{
+                    return getRandomStringCustomDistribution(32);
                 };
                 inited = true;
             }
@@ -173,23 +183,25 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             }
                         }
                         
-                        std::string tempPass = "";
 
-                        for (size_t i = 0 ; i < number_of_passwords; i++)
+                        for (size_t j = 0; j < practiceProbabilities.size(); j++) //with for(auto i:practiceProbabilities ) not working 
                         {
-                            practiceProbabilities[0].getPassword(tempPass);
-                            //tempPass = getRandomString(32);
-                            FillOcurrencesafterKSA(practiceProbabilities[0].occurrence_probability, tempPass );
-                        }
+                            for (size_t i = 0 ; i < number_of_passwords; i++)
+                            {
+                                FillOcurrencesafterKSA(practiceProbabilities[j].occurrence_probability,
+                                                        practiceProbabilities[j].getPassword() 
+                                                    );
+                            }
                                
-                        for (int i = 0; i < 256; i++)
-                        {
-                            arrayOccurrences2probabilities(
-                                practiceProbabilities[0].occurrence_probability[i], 
-                                practiceProbabilities[0].occurrence_probability[i],
-                                256,
-                                number_of_passwords
-                                );
+                            for (int i = 0; i < 256; i++)
+                            {
+                                arrayOccurrences2probabilities(
+                                    practiceProbabilities[j].occurrence_probability[i], 
+                                    practiceProbabilities[j].occurrence_probability[i],
+                                    256,
+                                    number_of_passwords
+                                    );
+                            }
                         }
                         
                         GetRealProbabilitiesRC4afterKSA(occurrence_probability_theoretical);
@@ -277,19 +289,33 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                 ImGui::PushItemWidth(-1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
                 
+
                 if(ImGui::CollapsingHeader("Practical probability of each value to be at position u with uniformly distributed keys"))
                 {
-                    //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
-                    ImGui::PlotHistogram("", 
-                                        practiceProbabilities[0].occurrence_probability[positions[i]], 
-                                        IM_ARRAYSIZE(practiceProbabilities[0].occurrence_probability[positions[i]]), 
-                                        0, 
-                                        NULL, 
-                                        0.001f, 
-                                        get_max(practiceProbabilities[0].occurrence_probability[positions[i]],256), 
-                                        ImVec2(0,80)
-                                    );
+                    //drawing ImGui::PlotHistogram for each item in vector of structs RC4_calc_instance_in_practice
+                    for (size_t ii = 0; ii < practiceProbabilities.size(); ii++)
+                    {
+                        //"Practical probability of each value to be at position u with uniformly distributed keys"
+                        //if(ImGui::TreeNode(practiceProbabilities[ii].id))
+                        if(ImGui::TreeNodeEx(practiceProbabilities[ii].id))
+                        {
+                            //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
+                            ImGui::PlotHistogram("", 
+                                                practiceProbabilities[ii].occurrence_probability[positions[i]], 
+                                                IM_ARRAYSIZE(practiceProbabilities[ii].occurrence_probability[positions[i]]), 
+                                                0, 
+                                                NULL, 
+                                                0.001f, 
+                                                get_max(practiceProbabilities[ii].occurrence_probability[positions[i]],256), 
+                                                ImVec2(0,80)
+                                            );
+
+                            ImGui::TreePop();
+                            ImGui::Separator();
+                        }
+                    }
                 }
+
                 if(calcBase)
                 {
                     if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u"))

@@ -1,5 +1,5 @@
 
-void default_setup_imgui(ImGuiIO &io)
+void default_setup_imgui(ImGuiIO &io, SDL_Window* window)
 {
 
     // Setup Dear ImGui style

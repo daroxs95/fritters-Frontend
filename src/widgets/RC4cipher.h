@@ -8,8 +8,8 @@
 #include <imgui/imgui_stdlib.h>
 
 
-#include "crypto.h"
-#include "imgui_helpers.h"
+#include "../crypto.h"
+#include "../imgui_helpers.h"
 
 
 void RC4cipher()//RC4 cipher

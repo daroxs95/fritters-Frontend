@@ -61,11 +61,11 @@ int main(void)
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     m_imgui_app("Fritters Playground", 
-        [&](ImGuiIO &io, SDL_Window* window)mutable->void{
-            app(state, clear_color, io, window);
+        [&](ImGuiIO &io, SDL_Window* sdl_window)mutable->void{
+            app(state, clear_color, io, sdl_window);
         }, 
         clear_color,
-        [&](ImGuiIO &io)->void{
+        [&](ImGuiIO &io, SDL_Window* sdl_window)->void{
             //basic imgui
             ImGuiStyle& style = ImGui::GetStyle();
 
@@ -92,6 +92,7 @@ int main(void)
             ImPlot::GetStyle().AntiAliasedLines = true;
             ImPlot::GetStyle().Colormap = ImPlotColormap_Dark;
 
+            SDL_MaximizeWindow(sdl_window);
         },
         [&]()->void{
             //plot

@@ -5,3 +5,5 @@
 -fix app freezes when opened NFD
 -make zoom and save to image available to any widget
 -the pop ups need to be able to resize
+-Im starting to depend too much in SDL, check this.
+-put a description field in structs representing probabilities calculations, to render it as a tooltip

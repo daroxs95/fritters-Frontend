@@ -45,7 +45,7 @@ using namespace gl;
 #endif
 
 // Main code
-int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* window)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
+int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* window)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io, SDL_Window* window)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
 {
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
@@ -122,7 +122,7 @@ int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* wi
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     //call user passed setup function, to style app and stuff
-    if(setup_imgui != NULL) setup_imgui(io);
+    if(setup_imgui != NULL) setup_imgui(io, window);
 
     // Setup Platform/Renderer backends
     ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
