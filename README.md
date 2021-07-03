@@ -1,5 +1,10 @@
-# fritters-Frontend
-Basic frontend for testing and using fritters
+![GitHub](https://img.shields.io/github/license/daroxs95/fritters-Frontend?style=for-the-badge)
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/daroxs95/fritters-Frontend/CI?style=for-the-badge)
+
+# fritters-Frontend (WIP)
+
+Basic frontend for testing and using fritters library. Work in progress, please do not use.
 
 
 

@@ -1,3 +1,6 @@
+#include "imgui/imgui.h"
+
+#include <SDL2/SDL.h>
 
 void default_setup_imgui(ImGuiIO &io, SDL_Window* window)
 {

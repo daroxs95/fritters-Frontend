@@ -71,7 +71,8 @@ add_executable(frittersFrontend
             "3rdParty/imgui/addons/imguifilesystem/imguifilesystem.cpp"#optional
             )
 
-collect( "https://github.com/PotatoBite/fritters" "v0.0.12" frittersFrontend )
+collect( "https://github.com/PotatoBite/fritters"   "v0.0.13"   frittersFrontend )
+collect( "https://github.com/gabime/spdlog"         "v1.8.5"    frittersFrontend )
 #collect( "E:/coding/Projects/PotatoBite/fritters" "v0.0.12" frittersFrontend )#development
 
 #collect( "D:/collector/_SDL-03e69d826e7dd77f343b1140fa34b9e803725f52" "release-2.0.14" frittersFrontend )
@@ -121,9 +122,9 @@ include(CPack)
 
 if(${SDL2_FOUND})
     if (WIN32)       #Windows settings
-        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 )#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 spdlog)#for sdl_opengl3 by find package
     elseif(UNIX AND NOT APPLE)#for linux only
-        target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2 ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES})#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2 ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES} spdlog)#for sdl_opengl3 by find package
         #target_compile_definitions(frittersFrontend PRIVATE ${GTK3_CFLAGS_OTHER})
     endif ()
 endif()

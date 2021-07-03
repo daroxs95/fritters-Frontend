@@ -11,6 +11,8 @@
 #include <imgui/imgui_stdlib.h>
 #include <nfd.h>
 #include <SDL2/SDL.h>
+#include <fritters/RC4.h>
+#include <spdlog/spdlog.h>
 
 #include "../random_password.h"
 #include "../crypto.h"
@@ -59,28 +61,50 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 std::function<double(uint8_t u, uint8_t v)> getProbability;
             };
 
-            /*
-            //this looks ugly, need to refactor
-            static std::vector<RC4_calc_instance_in_practice> practiceProbabilities = { 
-                RC4_calc_instance_in_practice(),
-                RC4_calc_instance_in_practice() 
-                };
-            */
+ 
             static std::vector<RC4_calc_instance_in_practice> practiceProbabilities;//cant decide if is better this way or as above
-            practiceProbabilities.resize(2);
+            practiceProbabilities.resize(3);
+
+            struct jArray
+            {
+                float values[256];
+                float isOdd[256];//set to float cause ImGui histogram does not support bool
+            };
+            static std::vector<jArray>      jArrays;
 
             //put this in some conditional to no execute it every time in the main loop
             static bool inited = false;
             if (!inited)
             {
-                strcpy(practiceProbabilities[0].id, "Full random password");
+                strcpy(practiceProbabilities[0].id, "Uniformly distributed keys, fully random chars/digits");
                 practiceProbabilities[0].getPassword = []()->std::string{
                     return getRandomString(32);
                 };
 
-                strcpy(practiceProbabilities[1].id, "Full random password custom distribution");
+                strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}");
                 practiceProbabilities[1].getPassword = []()->std::string{
                     return getRandomStringCustomDistribution(32);
+                };
+
+                strcpy(practiceProbabilities[2].id, "Full random password custom distribution method 2");
+                practiceProbabilities[2].getPassword = []()->std::string{
+                    std::string a = getRandomStringCustomDistribution(32);
+
+                    jArrays.resize(jArrays.size() + 1);
+                    //jArraysIsOdd.resize(jArrays.size() + 1);
+
+                    uint8_t temp[256];
+                    RC4 cipher("password");
+                    cipher.KSA(a,temp);
+                    for (short i = 0; i < 256; i++)
+                    {
+                        if(temp[i] % 2 != 0) jArrays.back().isOdd[i] = true;
+                        else jArrays.back().isOdd[i] = false;
+
+                        jArrays.back().values[i] = static_cast<float>(temp[i]);
+                    }
+                    
+                    return a;
                 };
                 inited = true;
             }
@@ -142,9 +166,10 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
             if(!calculating)
             {   
-                
                 if (ImGui::Button("Calculate"))
                 {   
+                    spdlog::info("Calculating!");
+
                     calculating = true;
 
                     std::thread t([&]()->void
@@ -153,6 +178,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         
                         srand((unsigned) time(0));//for generating random strings
 
+                        jArrays.clear();
+                        
                         if(calculateFrom == CalculateFrom::file)
                         {
                             number_of_passwords = 0;
@@ -290,7 +317,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 ImGui::PushItemWidth(-1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
                 
 
-                if(ImGui::CollapsingHeader("Practical probability of each value to be at position u with uniformly distributed keys"))
+                if(ImGui::CollapsingHeader("Practical probability of each value to be at position u"))
                 {
                     //drawing ImGui::PlotHistogram for each item in vector of structs RC4_calc_instance_in_practice
                     for (size_t ii = 0; ii < practiceProbabilities.size(); ii++)
@@ -313,6 +340,34 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             ImGui::TreePop();
                             ImGui::Separator();
                         }
+                    }
+                }
+
+                if (ImGui::CollapsingHeader("j indexes for each analyzed key(index used in each iteration of KSA)"))
+                {
+                    if (jArrays.size() > 0 )
+                    {
+                        static int positionJ;
+                        ImGui::SliderInt("Value of u", &positionJ, 0, jArrays.size()-1);
+                        ImGui::PlotHistogram("jArray values", 
+                                            jArrays[positionJ].values, 
+                                            IM_ARRAYSIZE(jArrays[positionJ].values), 
+                                            0, 
+                                            NULL, 
+                                            0.001f, 
+                                            //get_max(jArrays[positionJ].values,256), 
+                                            256,
+                                            ImVec2(0,80)
+                                        );
+                        ImGui::PlotHistogram("jArray isOdd", 
+                                            jArrays[positionJ].isOdd, 
+                                            IM_ARRAYSIZE(jArrays[positionJ].isOdd), 
+                                            0, 
+                                            NULL, 
+                                            0.001f, 
+                                            1, 
+                                            ImVec2(0,80)
+                                        );
                     }
                 }
 
@@ -373,10 +428,14 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                     ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
                     
+                    
                     if(calcPracticeAllKeys)
                     {           
-                        ImPlot::PlotShaded("Probabilities after KSA in practice new", practiceProbabilities[0].occurrence_probability[positions[i]], 256, 0);
-                        ImPlot::PlotLine("Probabilities after KSA in practice new", practiceProbabilities[0].occurrence_probability[positions[i]], 256);
+                        for (size_t j = 0; j < practiceProbabilities.size(); j++)
+                        {
+                            ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrence_probability[positions[i]], 256, 0);
+                            ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrence_probability[positions[i]], 256);
+                        }
                     }
 
                     if(calcBase)

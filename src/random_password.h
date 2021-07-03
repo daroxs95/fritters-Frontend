@@ -13,8 +13,8 @@
 */
 
 
-#include<string>
-#include<time.h>
+#include <string>
+#include <time.h>
 #include <random>
 
 
@@ -40,7 +40,8 @@ std::string getRandomString(const int length)
 
 
 /**
- * @brief Get a Random String using a Custom Distribution, you need to `srand()` by yourself for changing seed
+ * @brief Get a Random String using a Custom Distribution, you need to `srand()` by yourself for changing seed.
+ * It generates keys like: {1,0,ODD,EVEN,ODD,EVEN...}
  * 
  * @param length length of the returned string
  * @return std::string the random string
@@ -66,6 +67,42 @@ std::string getRandomStringCustomDistribution(const int length)
         {
             if ( (tempChar % 2) == 0) res[i] = tempChar;
             else res[i] = (tempChar + 1)%256;                   //do something here to avoid module operation
+        }
+
+    }
+    
+    return res;
+}
+
+
+/**
+ * @brief Get a Random String using a Custom Distribution, you need to `srand()` by yourself for changing seed.
+ * It generates keys like: {1,0,ODD,EVEN,ODD,EVEN...}
+ * 
+ * @param length length of the returned string
+ * @return std::string the random string
+ */
+std::string getRandomStringCustomDistribution2(const int length)
+{
+    std::string res;
+    res.resize(length);
+
+    res[0] = 1;
+    res[1] = 0;
+
+    uint8_t tempChar;
+    for (size_t i = 2; i < length; i++)
+    {
+        tempChar = rand()%256;
+        if(i % 2 == 0)
+        {
+            while ( (tempChar % 2) != 1) tempChar = rand()%256;
+            res[i] = tempChar;                       //not needed module operation because greater par number module 256 is 254, and plus 1 is 255
+        }
+        else
+        {
+            while ( (tempChar % 2) != 0) tempChar = rand()%256;
+            res[i] = tempChar;                   //do something here to avoid module operation
         }
 
     }
