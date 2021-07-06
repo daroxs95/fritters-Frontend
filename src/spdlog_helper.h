@@ -10,6 +10,12 @@
 #endif
 
 
+//this need to be done better, to improve this attempt of singleton 
+/**
+ * @brief Get the Multi Sink Logger object reference. This logs to file and to console.
+ * 
+ * @return spdlog::logger& reference to singleton Multi Sink Logger
+ */
 spdlog::logger& getMultiSinkLogger()
 {
     static auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();

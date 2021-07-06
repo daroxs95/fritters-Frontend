@@ -6,7 +6,8 @@ add_definitions( -DAPP_VERSION="${CMAKE_PROJECT_VERSION}" )
 add_definitions( -DCOMPILER_SPEC="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}" )
 add_definitions( -DAPP_NAME="${PROJECT_NAME}")
 
-set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+
+#set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
 #set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
 
 include("collector/collector.cmake")#need to be after project()
