@@ -64,7 +64,7 @@ jobs:
     - name: Package App
       uses: actions/upload-artifact@v2
       with:
-        name: App (Windows x64)
+        name: App (LinuxGTK x64)
         path: |
           tempApp/
 
@@ -120,6 +120,6 @@ jobs:
     - name: Package App
       uses: actions/upload-artifact@v2
       with:
-        name: App (LinuxGTK x64)
+        name: App (Windows x64)
         path: |
           tempApp/
