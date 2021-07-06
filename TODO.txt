@@ -7,3 +7,5 @@
 -the pop ups need to be able to resize
 -Im starting to depend too much in SDL, check this.
 -put a description field in structs representing probabilities calculations, to render it as a tooltip
+-find a way to deactivate spdlog on compile time, to not link it or not compile it, or something, in main.cpp there is a try in defines but is not working
+-the app crashes when calculating and trying to render the content of ccollapsing header "j indexes for each an..." 

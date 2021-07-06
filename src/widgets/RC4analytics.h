@@ -18,6 +18,8 @@
 #include "../crypto.h"
 #include "../imgui_helpers.h"
 #include "../gl_helpers.h"
+#include "../spdlog_helper.h"
+
 
 #include "About.h"
 #include "Help.h"
@@ -45,6 +47,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static int positions[] = {0};                                       //position to get probability at, for each histogram showed, size is of max histograms
             static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
+            //create a handler to logging, TODO set this handler as a singleton to whole app
+            static auto logger = getMultiSinkLogger();
+
             //struct of base calculation type of probabilities after KSA in practice, any type of calculation needed experimentally
             //should be doable using this
             struct RC4_calc_instance_in_practice
@@ -168,7 +173,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             {   
                 if (ImGui::Button("Calculate"))
                 {   
-                    spdlog::info("Calculating!");
+                    //spdlog::info("Calculating!");
+                    logger.info("Calculating!");
 
                     calculating = true;
 

@@ -4,8 +4,10 @@ project(frittersFrontend VERSION 0.0.3)
 
 add_definitions( -DAPP_VERSION="${CMAKE_PROJECT_VERSION}" )
 add_definitions( -DCOMPILER_SPEC="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}" )
+add_definitions( -DAPP_NAME="${PROJECT_NAME}")
 
-#set(CMAKE_EXE_LINKER_FLAGS "-mconsole -v")#console mode app// in gcc throws error, in msvc warning
+set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+#set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
 
 include("collector/collector.cmake")#need to be after project()
 include(FetchContent)
@@ -19,6 +21,7 @@ enable_testing()
 set (CMAKE_CXX_STANDARD 17)
 
 include_directories("3rdParty/imgui")
+include_directories("3rdParty/easy_imgui")
 include_directories("3rdParty/NFD/include")
 include_directories("3rdParty")
 include_directories("3rdParty/imgui/imgui/libs/gl3w")#only for use the opengl loader gl3w that resides inside source, can be retireved 
@@ -61,23 +64,20 @@ add_executable(frittersFrontend
             "src/main.cpp"
             ${IMGUI_BASIC_SOURCES}
             ${IMGUI_RENDERING_BACKEND_SOURCES}
-            ${NFD_SOURCES}#optional for native file dialog
-            "3rdParty/imgui/imgui/libs/gl3w/GL/gl3w.c"#optional, in the end will be used something external, with collector
-            "3rdParty/imgui/imgui/imgui_stdlib.cpp"#optional
-            "3rdParty/imgui/imgui/imgui_demo.cpp"#optional
-            "3rdParty/imgui/implot/implot.cpp"#optional
-            "3rdParty/imgui/implot/implot_items.cpp"#optional
-            "3rdParty/imgui/implot/implot_demo.cpp"#optional
-            "3rdParty/imgui/addons/imguifilesystem/imguifilesystem.cpp"#optional
+            ${NFD_SOURCES}                                                  #optional for native file dialog
+            "3rdParty/imgui/imgui/libs/gl3w/GL/gl3w.c"                      #optional, in the end will be used something external, with collector
+            "3rdParty/imgui/imgui/imgui_stdlib.cpp"                         #optional
+            "3rdParty/imgui/imgui/imgui_demo.cpp"                           #optional
+            "3rdParty/imgui/implot/implot.cpp"                              #optional
+            "3rdParty/imgui/implot/implot_items.cpp"                        #optional
+            "3rdParty/imgui/implot/implot_demo.cpp"                         #optional
+            "3rdParty/imgui/addons/imguifilesystem/imguifilesystem.cpp"     #optional
             )
 
 collect( "https://github.com/PotatoBite/fritters"   "v0.0.13"   frittersFrontend )
 collect( "https://github.com/gabime/spdlog"         "v1.8.5"    frittersFrontend )
-#collect( "E:/coding/Projects/PotatoBite/fritters" "v0.0.12" frittersFrontend )#development
-
-#collect( "D:/collector/_SDL-03e69d826e7dd77f343b1140fa34b9e803725f52" "release-2.0.14" frittersFrontend )
-#collect( "https://github.com/skaslev/gl3w" "" frittersFrontend )#not needed for now, but is important to start using it
-#collect( "https://github.com/glfw/glfw" "3.3.4" frittersFrontend )#not needed for now, but is important to start using it
+#collect( "E:/coding/Projects/PotatoBite/fritters"  "v0.0.12"   frittersFrontend )      #development
+#collect( "https://github.com/skaslev/gl3w"         ""          frittersFrontend )      #not needed for now, but is important to start using it
 
 #collect( "https://github.com/Rezonality/zep" "v0.1.12" frittersFrontend )
 

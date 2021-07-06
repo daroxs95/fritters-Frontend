@@ -12,46 +12,22 @@
 #endif
 
 #include <easy_imgui_sdl_gl3.h>
+#include <spdlog/spdlog.h>
 
 #include "app.h"
+#include "spdlog_helper.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 
+
+//#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF//this is not working to deactivate spdlog
 using namespace std;
 
 int main(void)
 {
-    /*{
-        static std::ifstream passwords_file;
-
-        static int number_of_passwords = 0;
-        static float occurrence_probability[256][256];
-
-        if (!passwords_file.is_open()) passwords_file.open("passwords.txt");
-
-        std::list<std::string> passwords;
-        {
-            number_of_passwords = 0;
-
-            std::string password;
-
-            while (!passwords_file.eof())
-            {
-                std::getline(passwords_file, password);
-                if (password != "")
-                {
-                    passwords.push_back(password);
-                    number_of_passwords++;
-                }
-            }
-            passwords_file.close();
-        }
-
-        static std::thread fillProbabilities(GetProbabilitiesRC4afterKSA, passwords, std::ref(occurrence_probability), number_of_passwords);
-        //GetProbabilitiesRC4afterKSA(passwords, std::ref(occurrence_probability), number_of_passwords);
-        fillProbabilities.join();
-        cout << "calculate successfully";
-    }*/
+    auto logger = getMultiSinkLogger();
+    logger.info("Starting app...");
 
     //create and fill state
     app_state state;
@@ -99,6 +75,10 @@ int main(void)
             ImPlot::DestroyContext();
         },
         true);
+
+
+
+    logger.info("Graceful quiting app...");
 
     return 0;
 }
