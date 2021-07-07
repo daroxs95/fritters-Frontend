@@ -125,7 +125,7 @@ if(${SDL2_FOUND})
     if (WIN32)       #Windows settings
         target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 spdlog)#for sdl_opengl3 by find package
     elseif(UNIX AND NOT APPLE)#for linux only
-        target_link_libraries (frittersFrontend PRIVATE fritters_static GL SDL2 ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES} spdlog)#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static GL ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES} spdlog)#for sdl_opengl3 by find package
         #target_compile_definitions(frittersFrontend PRIVATE ${GTK3_CFLAGS_OTHER})
     endif ()
 endif()

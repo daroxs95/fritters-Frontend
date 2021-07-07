@@ -79,9 +79,16 @@ void RC4cipher()//RC4 cipher
             }
 
             if (ImGui::RadioButton("Hex", showInBase == Bases::hex)) { showInBase = Bases::hex;} ImGui::SameLine();
-            if (ImGui::RadioButton("Dec", showInBase == Bases::dec)) { showInBase = Bases::dec;} ImGui::SameLine();
+            if (ImGui::RadioButton("Dec", showInBase == Bases::dec)) { showInBase = Bases::dec;}
 
-            ImGui::InputTextMultiline("First State Array", S0_array, ImVec2(0,60),ImGuiInputTextFlags_ReadOnly);
+            //ImGui::InputTextMultiline("First State Array", S0_array, ImVec2(0,60),ImGuiInputTextFlags_ReadOnly);
+            
+            //TODO make this render more pretty, like an input or something
+            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + ImGui::GetContentRegionAvail().x * 0.7f);
+            ImGui::Text( S0_array->c_str() );
+            ImGui::PopTextWrapPos();
+            ImGui::SameLine();
+            ImGui::Text("First State Array");
 
             if (ImGui::InputTextMultiline("Plaintext", &plaintext, ImVec2(0,60)))
             {
