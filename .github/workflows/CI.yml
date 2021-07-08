@@ -68,12 +68,13 @@ jobs:
         path: |
           tempApp/
 
-    - name: Package Collections
-      uses: actions/upload-artifact@v2
-      with:
-        name: Linux Collections
-        path: |
-          collections/GNU-9.3.0/lib/
+    #this throws error to decompress after download in windows
+    #- name: Package Collections
+    #  uses: actions/upload-artifact@v2
+    #  with:
+    #    name: Linux Collections
+    #    path: |
+    #      collections/GNU-9.3.0/lib/
 
 
   build_windows:
