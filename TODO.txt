@@ -11,3 +11,5 @@
 -the app crashes when calculating and trying to render the content of ccollapsing header "j indexes for each an..."
 -need to set an option to compile console mode on all platforms and compilers
 -add a release for mac
+-not saving images in linux with wayland
+-release in github actions to linux with SDL static, has 15mb size, can be stripped to 5.4, why is not stripped by default, is sdl being compiled in debug? 

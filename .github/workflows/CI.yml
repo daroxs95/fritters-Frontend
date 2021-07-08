@@ -68,6 +68,13 @@ jobs:
         path: |
           tempApp/
 
+    - name: Package Collections
+      uses: actions/upload-artifact@v2
+      with:
+        name: Linux Collections
+        path: |
+          collections/
+
 
   build_windows:
     runs-on: windows-latest
