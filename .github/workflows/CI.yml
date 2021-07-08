@@ -73,7 +73,7 @@ jobs:
       with:
         name: Linux Collections
         path: |
-          collections/
+          collections/GNU-9.3.0/lib/
 
 
   build_windows:
