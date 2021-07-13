@@ -22,7 +22,6 @@ enable_testing()
 set (CMAKE_CXX_STANDARD 17)
 
 include_directories("3rdParty/imgui")
-include_directories("3rdParty/easy_imgui")
 include_directories("3rdParty/NFD/include")
 include_directories("3rdParty")
 include_directories("3rdParty/imgui/imgui/libs/gl3w")#only for use the opengl loader gl3w that resides inside source, can be retireved 

@@ -14,3 +14,6 @@
 -not saving images in linux with wayland
 -release in github actions to linux with SDL static, has 15mb size, can be stripped to 5.4, why is not stripped by default, is sdl being compiled in debug?
 -in gh actions, whe upload a folder as artifact(collections/), says it is corrupted after download 
+-implement error calc as in papaer [1] Discussion
+-the app crash y number of keys is too big, fix that
+-maybe implemet the subproccess to calculate, completely independent, ie not writting directly to the arrays in main app

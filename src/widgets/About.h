@@ -23,7 +23,7 @@ void about(bool *aboutHandler)
         ImGui::Text("Fritters Frontend version %s", APP_VERSION);
         ImGui::Text("Compiled with %s", COMPILER_SPEC);
         ImGui::Text("\nCreated and maintained by Darián López Utra");
-        ImGui::Text("Contact by: \n Telegram: @SunShineXS \n email: daroxs95@gmail.com");
+        ImGui::Text("Contact by: \n Telegram: @SunShineXS \n Email: daroxs95@gmail.com");
         ImGui::EndPopup();//end the modal where the widget is being rendered
     };
     ImGui::OpenPopup("About");

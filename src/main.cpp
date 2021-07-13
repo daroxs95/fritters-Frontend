@@ -11,11 +11,12 @@
 # define COMPILER_SPEC "UNDEFINED"
 #endif
 
-#include <easy_imgui_sdl_gl3.h>
+#include <easy_imgui/easy_imgui_sdl_gl3.h>
+#include <easy_imgui/spdlog_helper.h>
+
 #include <spdlog/spdlog.h>
 
 #include "app.h"
-#include "spdlog_helper.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
@@ -78,7 +79,7 @@ int main(void)
 
 
 
-    logger.info("Graceful quiting app...");
+    logger.info("Graceful quiting app...\n");
 
     return 0;
 }

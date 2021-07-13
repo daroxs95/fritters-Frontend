@@ -1,5 +1,9 @@
 #pragma once
 
+//actually, i do not know if this is working as expected, i want to be something like a singleton but i am using
+//static things for this, and this is used in many diferent places, like inside lambdas, and not sure about scopes, or anything
+//please future me fix this, and other people please do not use
+
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 //#include "spdlog/sinks/basic_file_sink.h"

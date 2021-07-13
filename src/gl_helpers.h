@@ -82,7 +82,7 @@
 
 
 
-void saveImage(char* filepath, int width = 600, int height= 600, int xpos = 0, int ypos = 0) 
+int saveImage(char* filepath, int width = 600, int height= 600, int xpos = 0, int ypos = 0) 
 {
     GLsizei nrChannels = 3;
     GLsizei stride = nrChannels * width;
@@ -95,9 +95,7 @@ void saveImage(char* filepath, int width = 600, int height= 600, int xpos = 0, i
     stbi_flip_vertically_on_write(true);
     stbi_write_png(filepath, width, height, nrChannels, buffer.data(), stride);
 
-    //FILE *f;
-    //f = stbiw__fopen(filepath, "wb");
-    //stbi_write_png_to_func(filepath, width, height, nrChannels, buffer.data(), stride)
+    return 0;//TODO, handle the return of errors, here always return 0, for no error
 }
 
 

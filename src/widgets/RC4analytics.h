@@ -18,7 +18,7 @@
 #include "../crypto.h"
 #include "../imgui_helpers.h"
 #include "../gl_helpers.h"
-#include "../spdlog_helper.h"
+#include <easy_imgui/spdlog_helper.h>
 
 
 #include "About.h"
@@ -275,16 +275,19 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     nfdresult_t result = NFD_OpenDialog( NULL, NULL, &outPath );
                         
                     if ( result == NFD_OKAY ) {
-                        printf("\n\tSuccessfully selected passwords file: %s \n", outPath);
+                        //printf("\n\tSuccessfully selected passwords file: %s \n", outPath);
+                        logger.info("Successfully selected passwords file: {}", outPath);
+                        
                         //puts(outPath);
                         strcpy(pathToPasswordsFile,outPath);
                         free(outPath);
                     }
                     else if ( result == NFD_CANCEL ) {
-                        printf("\n\tUser pressed cancel.\n");
+                        //printf("\n\tUser pressed cancel.\n");//not logging here, because is a weird thing lo keep track
                     }
                     else {
-                        printf("\n\tError: %s\n", NFD_GetError() );
+                        //printf("\n\tError: %s\n", NFD_GetError() );
+                        logger.error("Error selecting file: {}", NFD_GetError() );
                     }
                 }
 
@@ -484,18 +487,22 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         nfdresult_t result = NFD_SaveDialog("png", NULL, &outPath );//the filterlist if splitted by comma shows the extensions together but like OR, and if splitted by ; shows each ext independently
                             
                         if ( result == NFD_OKAY ) {
-                            printf("\n\tSuccessfully selected output file: %s \n", outPath);
+                            //printf("\n\tSuccessfully selected output file: %s \n", outPath);
                             //puts(outPath);
                             //strcpy(pathToPasswordsFile,outPath);
-                            saveImage(outPath,temp[0], temp[1],1,ImGui::GetWindowSize()[1] - temp[1] -1);//there are 1pixel of diference for the border, need to generalize that better
+                            if( saveImage(outPath,temp[0], temp[1],1,ImGui::GetWindowSize()[1] - temp[1] -1) == 0);//there are 1 pixel of diference for the border, need to generalize that better
+                            {
+                                logger.info("Successfully saved image to: {}", outPath);
+                            }
                             free(outPath);
 
                         }
                         else if ( result == NFD_CANCEL ) {
-                            printf("\n\tUser pressed cancel.\n");
+                            //printf("\n\tUser pressed cancel.\n");//not logging here, because is a weird thing lo keep track
                         }
                         else {
-                            printf("\n\tError: %s\n", NFD_GetError() );
+                            //printf("\n\tError: %s\n", NFD_GetError() );
+                            logger.error("Error selecting file: {}", NFD_GetError() );
                         }
                         
                     }

@@ -5,17 +5,17 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 #pragma once
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_sdl.h"
-#include "imgui/imgui_impl_opengl3.h"
+#include <imgui/imgui.h>
+#include <imgui/imgui_impl_sdl.h>
+#include <imgui/imgui_impl_opengl3.h>
 
 #include <stdio.h>
-//#include <SDL.h>
 #include <SDL2/SDL.h>
 #include <functional>
 #include <spdlog/spdlog.h>
 
 #include "defaults.h"
+#include "spdlog_helper.h"//include this file in easy_imgui or readjust the folders structures of easy_imgui, looks ugly and is bad for dependencies the way it's structured
 
 #if defined(IMGUI_IMPL_OPENGL_ES2)
 #include <GLES2/gl2.h>
@@ -48,15 +48,20 @@ using namespace gl;
 // Main code
 int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* window)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io, SDL_Window* window)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
 {
+    //get instance of logger
+    static auto logger = getMultiSinkLogger();
+
+
     // Setup SDL
     // (Some versions of SDL before <2.0.10 appears to have performance/stalling issues on a minority of Windows systems,
     // depending on whether SDL_INIT_GAMECONTROLLER is enabled or disabled.. updating to latest version of SDL is recommended!)
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {
         //printf("Error: %s\n", SDL_GetError());
-        spdlog::error("Error: %s\n", SDL_GetError());
+        logger.error("Error: {}", SDL_GetError());
         return -1;
     }
+    logger.info("SDL library initialized.");
 
     // Decide GL+GLSL versions
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -112,9 +117,12 @@ int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* wi
 #endif
     if (err)
     {
-        fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+        //fprintf(stderr, "Failed to initialize OpenGL loader!\n");
+        logger.error("Failed to initialize OpenGL loader.");
+
         return 1;
     }
+    logger.info("OpenGL loader initialized.");
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
