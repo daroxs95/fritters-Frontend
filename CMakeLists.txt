@@ -83,7 +83,7 @@ add_executable(frittersFrontend
 collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
 #collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
-collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
+#collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
 
 #collect     ( "https://github.com/walterschell/Lua"         "v5.4.2"           frittersFrontend ) #missing install step
 #collect     ( "https://github.com/9chu/LuaJIT-cmake"     ""           frittersFrontend ) #error installing, missing header
