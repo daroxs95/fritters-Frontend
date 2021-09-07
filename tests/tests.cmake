@@ -12,11 +12,10 @@ endforeach()
 add_executable(test_lua_sol2
                tests/lua_sol2.cpp
 )
-if(WIN32)
-        add_dependencies( test_lua_sol2 _Lua)
-        include_directories (${_Lua_DIR}/include)
-        target_link_directories ( test_lua_sol2 PRIVATE ${_Lua_DIR}/lib)
-endif()
+
+add_dependencies( test_lua_sol2 _Lua)
+include_directories (${_Lua_DIR}/include)
+target_link_directories ( test_lua_sol2 PRIVATE ${_Lua_DIR}/lib)
 
 target_link_libraries (test_lua_sol2 PRIVATE lua )#for sdl_opengl3 by find package
 

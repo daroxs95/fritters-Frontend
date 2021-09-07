@@ -83,10 +83,9 @@ add_executable(frittersFrontend
 collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
 
-if(WIN32)
-    #collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
-    collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
-endif()
+#collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
+collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
+add_dependencies( _Lua _spdlog)
 
 #collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
 
