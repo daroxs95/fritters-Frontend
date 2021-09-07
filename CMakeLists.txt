@@ -80,6 +80,9 @@ add_executable(frittersFrontend
 
 collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
+#collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
+collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
+
 #collect     ( "https://github.com/walterschell/Lua"         "v5.4.2"           frittersFrontend ) #missing install step
 #collect     ( "https://github.com/9chu/LuaJIT-cmake"     ""           frittersFrontend ) #error installing, missing header
 #collect     ( "https://github.com/LuaJIT/LuaJIT"         "v2.0.5"           frittersFrontend ) #is a makefile project and collector does not handle it yet
@@ -87,12 +90,17 @@ collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frit
 
 #collect_src ( "https://github.com/g-truc/glm.git"        "0.9.9.8"          frittersFrontend )
 
+
 #temporal solution for lua
 collect_src  ( "https://github.com/ThePhD/sol2.git"       "v3.2.2"           frittersFrontend )
 include_directories (${_sol2.git_DIR}/include/)
-collect_src  ( "https://github.com/walterschell/Lua.git"  "v5.4.2"           frittersFrontend ) 
-add_subdirectory( ${_Lua.git_DIR} )
-list(APPEND EXTRA_LIBS "lua_static")
+list(APPEND EXTRA_LIBS "lua")
+
+# this fails in linux
+#collect_src  ( "https://github.com/walterschell/Lua.git"  "v5.4.2"           frittersFrontend ) 
+#add_subdirectory( ${_Lua.git_DIR} )
+#list(APPEND EXTRA_LIBS "lua_static")
+
 
 #collect( "E:\\coding\\Packages\\cpp\\sol2-3.2.2"    "v1.8.5"    frittersFrontend )
 
@@ -144,7 +152,7 @@ include(CPack)
 
 if(${SDL2_FOUND})
     if (WIN32)       #Windows settings
-        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 ${EXTRA_LIBS})#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 ${EXTRA_LIBS} )#for sdl_opengl3 by find package
     elseif(UNIX AND NOT APPLE)#for linux only
         target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static GL ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES} ${EXTRA_LIBS} )#for sdl_opengl3 by find package
         #target_compile_definitions(frittersFrontend PRIVATE ${GTK3_CFLAGS_OTHER})
@@ -193,3 +201,7 @@ install(TARGETS frittersFrontend
     ARCHIVE DESTINATION  ${CMAKE_INSTALL_LIBDIR}
     OBJECTS DESTINATION  ${CMAKE_INSTALL_LIBDIR}
 )
+
+
+#add tests
+include("tests/tests.cmake")

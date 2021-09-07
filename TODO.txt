@@ -20,3 +20,6 @@
 -check all arrays passed to functions like `a[256][256]`, seek a better general way to do it, and why the template deduction does not work with `a[][]` and works with `a[][256]`, plus in that case indeed checks the size of the arrays
 -fix the use of file containing passwords
 -make the wigets resizables, mainly the plots, and mainly when zoomed
+-compare the use of plain classic lua and luaJit
+-not building in linux
+-add test to save image, in linux without xorg not working
