@@ -7,10 +7,10 @@ add_definitions( -DCOMPILER_SPEC="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_
 add_definitions( -DAPP_NAME="${PROJECT_NAME}")
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if(WIN32)
-        message(INFO " detected GNU compiler in windows, passing flag -mconsole")
-        set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
-    endif()
+    #if(WIN32)
+    message(INFO " detected GNU compiler in windows, passing flag -mconsole")
+    set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+    #endif()
 endif()
 
 #set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
@@ -82,7 +82,11 @@ add_executable(frittersFrontend
 
 collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
-#collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
+
+if(WIN32)
+    collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
+endif()
+
 #collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
 
 #collect     ( "https://github.com/walterschell/Lua"         "v5.4.2"           frittersFrontend ) #missing install step
@@ -206,4 +210,4 @@ install(TARGETS frittersFrontend
 
 
 #add tests
-#include("tests/tests.cmake")
+include("tests/tests.cmake")
