@@ -7,8 +7,10 @@ add_definitions( -DCOMPILER_SPEC="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_
 add_definitions( -DAPP_NAME="${PROJECT_NAME}")
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    message(INFO " detected GNU compiler passing, flag -mconsole")
-    set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+    if(WIN32)
+        message(INFO " detected GNU compiler in windows, passing flag -mconsole")
+        set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+    endif()
 endif()
 
 #set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
