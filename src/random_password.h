@@ -43,8 +43,10 @@ std::string getRandomString(const int length)
  * @brief Get a Random String using a Custom Distribution, you need to `srand()` by yourself for changing seed.
  * It generates keys like: {1,0,ODD,EVEN,ODD,EVEN...}
  * 
- * @param length length of the returned string
+ * @param length length of the returned , >= 2
  * @return std::string the random string
+ *  
+ *  This version sums 1 or not to generated char by `rand()` to get it with the desired parity.
  */
 std::string getRandomStringCustomDistribution(const int length)
 {
@@ -57,7 +59,7 @@ std::string getRandomStringCustomDistribution(const int length)
     uint8_t tempChar;
     for (size_t i = 2; i < length; i++)
     {
-        tempChar = rand()%256;
+        tempChar = rand() % 256;
         if(i % 2 == 0)
         {
             if ( (tempChar % 2) == 1) res[i] = tempChar;
@@ -79,8 +81,10 @@ std::string getRandomStringCustomDistribution(const int length)
  * @brief Get a Random String using a Custom Distribution, you need to `srand()` by yourself for changing seed.
  * It generates keys like: {1,0,ODD,EVEN,ODD,EVEN...}
  * 
- * @param length length of the returned string
+ * @param length length of the returned string, >= 2
  * @return std::string the random string
+ * 
+ * This version runs `rand()` multiple times until get a char with the desired parity.
  */
 std::string getRandomStringCustomDistribution2(const int length)
 {
@@ -102,10 +106,11 @@ std::string getRandomStringCustomDistribution2(const int length)
         else
         {
             while ( (tempChar % 2) != 0) tempChar = rand()%256;
-            res[i] = tempChar;                   //do something here to avoid module operation
+            res[i] = tempChar;
         }
 
     }
     
     return res;
 }
+

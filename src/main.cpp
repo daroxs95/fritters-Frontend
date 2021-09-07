@@ -21,7 +21,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
 
-
 //#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_OFF//this is not working to deactivate spdlog
 using namespace std;
 

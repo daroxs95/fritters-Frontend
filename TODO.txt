@@ -15,5 +15,8 @@
 -release in github actions to linux with SDL static, has 15mb size, can be stripped to 5.4, why is not stripped by default, is sdl being compiled in debug?
 -in gh actions, whe upload a folder as artifact(collections/), says it is corrupted after download 
 -implement error calc as in papaer [1] Discussion
--the app crash y number of keys is too big, fix that
--maybe implemet the subproccess to calculate, completely independent, ie not writting directly to the arrays in main app
+-maybe implement the subproccess to calculate, completely independent, ie not writting directly to the arrays in main app
+-the generation of random nuumbers with rand() is not fully uniform, because rand() and module operations, neet to switch for something like a random engine or built in c++ <random> 
+-check all arrays passed to functions like `a[256][256]`, seek a better general way to do it, and why the template deduction does not work with `a[][]` and works with `a[][256]`, plus in that case indeed checks the size of the arrays
+-fix the use of file containing passwords
+-make the wigets resizables, mainly the plots, and mainly when zoomed

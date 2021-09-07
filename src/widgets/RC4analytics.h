@@ -44,7 +44,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static float occurrence_probability_theoretical_Sarkar[256][256];   //calculated by theoretical formulae by Sarkar
             static long double mse_base[256];                                   //mean square error of base theoretical probability
             static long double mse_Sarkar[256];                                 //mean square error of Sarkar theoretical probability
-            static int positions[] = {0};                                       //position to get probability at, for each histogram showed, size is of max histograms
+            static int positions[] = {0,1};                                       //position to get probability at, for each histogram showed, size is of max histograms
             static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
             //create a handler to logging, TODO set this handler as a singleton to whole app
@@ -54,7 +54,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             //should be doable using this
             struct RC4_calc_instance_in_practice
             {
-                char id[100];                                                    //id for each calculation
+                char id[200];                                                   //id for each calculation
+                long double occurrence_probability_real[256][256];                         //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
                 float occurrence_probability[256][256];                         //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
                 std::function<std::string()> getPassword;                       //function to know distribution of key(it generates keys with determined distribution)
             };
@@ -68,49 +69,83 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
  
             static std::vector<RC4_calc_instance_in_practice> practiceProbabilities;//cant decide if is better this way or as above
-            practiceProbabilities.resize(3);
+            practiceProbabilities.resize(7);
 
-            struct jArray
+            struct jArrayStruct
             {
                 float values[256];
                 float isOdd[256];//set to float cause ImGui histogram does not support bool
             };
-            static std::vector<jArray>      jArrays;
+            static std::vector<jArrayStruct>        jArrays;
+            static const int                        max_num_jArrays = 10000; 
+
 
             //put this in some conditional to no execute it every time in the main loop
             static bool inited = false;
             if (!inited)
             {
+                logger.info("jarray max size = {}", jArrays.max_size());
                 strcpy(practiceProbabilities[0].id, "Uniformly distributed keys, fully random chars/digits");
                 practiceProbabilities[0].getPassword = []()->std::string{
                     return getRandomString(32);
                 };
 
-                strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}");
+                strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0}");
                 practiceProbabilities[1].getPassword = []()->std::string{
-                    return getRandomStringCustomDistribution(32);
+                    return getRandomStringCustomDistribution(2);
                 };
 
-                strcpy(practiceProbabilities[2].id, "Full random password custom distribution method 2");
+
+                strcpy(practiceProbabilities[2].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32");
                 practiceProbabilities[2].getPassword = []()->std::string{
-                    std::string a = getRandomStringCustomDistribution(32);
+                    int size = rand()%29 + 3;
+                    if (size % 2 != 0) size++;
+                    
+                    return getRandomStringCustomDistribution(size);
+                };
 
-                    jArrays.resize(jArrays.size() + 1);
-                    //jArraysIsOdd.resize(jArrays.size() + 1);
+                strcpy(practiceProbabilities[3].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}, jarray fill, variable and even keylength, 2 <= keylength <= 32");
+                practiceProbabilities[3].getPassword = []()->std::string{
+                    int size = rand()%30 + 2;
+                    if (size % 2 != 0) size++;
+                    std::string a = getRandomStringCustomDistribution(size);
 
-                    uint8_t temp[256];
-                    RC4 cipher("password");
-                    cipher.KSA(a,temp);
-                    for (short i = 0; i < 256; i++)
+                    //need to store small number of jArrays, couse each struct is like 2kb and the ram gets eaten really fast,
+                    // and eventually the app could crash, ie for 2*10^6 keys 
+                    if(jArrays.size() < max_num_jArrays)
                     {
-                        if(temp[i] % 2 != 0) jArrays.back().isOdd[i] = true;
-                        else jArrays.back().isOdd[i] = false;
+                        jArrays.resize(jArrays.size() + 1);
 
-                        jArrays.back().values[i] = static_cast<float>(temp[i]);
+                        uint8_t temp[256];
+                        RC4 cipher("password");
+                        cipher.KSA(a,temp);
+                        for (short i = 0; i < 256; i++)
+                        {
+                            if(temp[i] % 2 != 0) jArrays.back().isOdd[i] = true;
+                            else jArrays.back().isOdd[i] = false;
+
+                            jArrays.back().values[i] = static_cast<float>(temp[i]);
+                        }
                     }
                     
                     return a;
                 };
+
+                strcpy(practiceProbabilities[4].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6");
+                practiceProbabilities[4].getPassword = []()->std::string{
+                    return getRandomStringCustomDistribution(6);
+                };
+
+                strcpy(practiceProbabilities[5].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 8");
+                practiceProbabilities[5].getPassword = []()->std::string{
+                    return getRandomStringCustomDistribution(8);
+                };
+
+                strcpy(practiceProbabilities[6].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 256");
+                practiceProbabilities[6].getPassword = []()->std::string{
+                    return getRandomStringCustomDistribution(256);
+                };
+
                 inited = true;
             }
 
@@ -137,9 +172,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 if (ImGui::BeginMenu("Probabilities"))
                 {
                     ImGui::MenuItem("Shows calcs by Goutam Paul,Subhamoy Maitra, Rohit Srivastava", NULL, &calcBase);
-                    ImGui::MenuItem("Shows calcs by Sarkar/Mantin formulae", NULL, &calcSarkar);
-                    ImGui::MenuItem("Shows calcs experimentally using uniformly distributed keys", NULL, &calcPracticeAllKeys);
-                    ImGui::MenuItem("Shows calcs experimentally using custom distributed keys", NULL, &calcPracticeCustomKeys);
+                    ImGui::MenuItem("Shows calcs by Sarkar/Mantin formulae",                        NULL, &calcSarkar);
+                    ImGui::MenuItem("Shows calcs experimentally using uniformly distributed keys",  NULL, &calcPracticeAllKeys);
+                    ImGui::MenuItem("Shows calcs experimentally using custom distributed keys",     NULL, &calcPracticeCustomKeys);
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Tools"))
@@ -154,7 +189,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     // ImGui::MenuItem("Metrics/Debugger", NULL, &show_app_metrics);
                     // ImGui::MenuItem("Style Editor", NULL, &show_app_style_editor);
                     ImGui::MenuItem("About", NULL, &showAbout);
-                    ImGui::MenuItem("Help", NULL, &showHelp);
+                    ImGui::MenuItem("Help",  NULL, &showHelp);
                     ImGui::EndMenu();
                 }
                 ImGui::EndMenuBar();
@@ -165,8 +200,10 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
             ImGui::Text("RC4 each possible value's probability to be in position u at first S(State Array) after KSA");
 
-            if (ImGui::RadioButton("From file", calculateFrom == CalculateFrom::file)) { calculateFrom = CalculateFrom::file;} ImGui::SameLine();
-            if (ImGui::RadioButton("From generated", calculateFrom == CalculateFrom::generated)) { calculateFrom = CalculateFrom::generated;} ImGui::SameLine();
+            if (ImGui::RadioButton("From file", calculateFrom == CalculateFrom::file))              calculateFrom = CalculateFrom::file; 
+            ImGui::SameLine();
+            if (ImGui::RadioButton("From generated", calculateFrom == CalculateFrom::generated))    calculateFrom = CalculateFrom::generated;
+            ImGui::SameLine();
 
 
             if(!calculating)
@@ -210,18 +247,16 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             //set a default value for compatibility
                             if (number_of_passwords == 0) number_of_passwords = 500000;
 
-                            for (size_t i = 0; i < number_of_passwords; i++)
-                            {
-                                passwords.push_back(getRandomString(32));
-                            }
                         }
                         
 
                         for (size_t j = 0; j < practiceProbabilities.size(); j++) //with for(auto i:practiceProbabilities ) not working 
                         {
+                            InitArrayTo(practiceProbabilities[j].occurrence_probability_real,(long double)0);
+
                             for (size_t i = 0 ; i < number_of_passwords; i++)
                             {
-                                FillOcurrencesafterKSA(practiceProbabilities[j].occurrence_probability,
+                                FillOcurrencesafterKSA(practiceProbabilities[j].occurrence_probability_real,
                                                         practiceProbabilities[j].getPassword() 
                                                     );
                             }
@@ -229,7 +264,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             for (int i = 0; i < 256; i++)
                             {
                                 arrayOccurrences2probabilities(
-                                    practiceProbabilities[j].occurrence_probability[i], 
+                                    practiceProbabilities[j].occurrence_probability_real[i], 
                                     practiceProbabilities[j].occurrence_probability[i],
                                     256,
                                     number_of_passwords
@@ -246,8 +281,18 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         }
                         
                         calculating = false;
+
+                        /*
+                        temp
+                        logger.info(practiceProbabilities[4].occurrence_probability[0][1]);
+                        logger.info(practiceProbabilities[5].occurrence_probability[0][1]);
+                        logger.info(practiceProbabilities[6].occurrence_probability[0][1]);
+                        end temp
+                        */
+
                     });
                     t.detach();
+
                 }
 
             }
@@ -432,7 +477,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     ImGui::BeginPopupModal("Fullscreen",NULL, ImGuiWindowFlags_NoTitleBar);//render the widget in a modal
                 }
                 ImPlot::SetNextPlotLimits(0,256,0,0.008);
-                if (ImPlot::BeginPlot("Positions against its probability to end at position u(ie P(S[u]=x)","x","P(S[u]=x)")) 
+                if (ImPlot::BeginPlot("Positions against its probability to end at position u(ie P(S[u]=x)","x","P(S[u]=x)") ) 
                 {
 
                     ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
@@ -466,10 +511,12 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 
                 if (showPlotFullscreen)
                 {
-                    ImVec2 temp = ImGui::GetItemRectSize();
 
                     if(ImGui::Button("Save image"))
                     {
+                        ImVec2 temp                     = ImGui::GetItemRectSize();
+                        ImVec2 winOffset2Widget         = ImGui::GetStyle().WindowPadding; //this is global, like any other imgui setting, find something else local if posible
+
                         /*
                         SDL_Renderer *r_copie=SDL_GetRenderer(window);
                         SDL_Surface *sshot = SDL_CreateRGBSurface(0, 800, 800, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
@@ -490,7 +537,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             //printf("\n\tSuccessfully selected output file: %s \n", outPath);
                             //puts(outPath);
                             //strcpy(pathToPasswordsFile,outPath);
-                            if( saveImage(outPath,temp[0], temp[1],1,ImGui::GetWindowSize()[1] - temp[1] -1) == 0);//there are 1 pixel of diference for the border, need to generalize that better
+                            if( saveImage(outPath,temp[0], temp[1],winOffset2Widget[0],ImGui::GetWindowSize()[1] - temp[1] -winOffset2Widget[1]) == 0)
                             {
                                 logger.info("Successfully saved image to: {}", outPath);
                             }

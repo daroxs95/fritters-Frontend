@@ -83,7 +83,8 @@ void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float 
  * @param occurrence_probability 
  * @param password 
  */
-void FillOcurrencesafterKSA(float occurrence_probability[256][256],const std::string password)
+template<typename T>
+void FillOcurrencesafterKSA(T occurrence_probability[256][256],const std::string password)
 {
         RC4 cipher(password);
         uint8_t temp_state_array[256];
@@ -93,6 +94,29 @@ void FillOcurrencesafterKSA(float occurrence_probability[256][256],const std::st
             occurrence_probability[i][temp_state_array[i]]++;
         }
 }
+
+
+/**
+ * @brief Fill the 2-dimensin array with value
+ * 
+ * @tparam T Type of array
+ * @param array array to fill
+ * @param value value to fill array with
+ * @param xsize size of firs index of array
+ * @param ysize size of second index of array
+ */
+template<typename T>
+void InitArrayTo(T array[256][256],const T value)
+{
+    for (size_t i = 0; i < 256; i++)
+    {
+        for (size_t ii = 0; ii < 256; ii++)
+        {
+            array[i][ii] = value;
+        }
+    }
+}
+
 
 /**
  * @brief Calculates the probability of v to end in position u after the end of RC4's KSA 

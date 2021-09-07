@@ -6,12 +6,14 @@ add_definitions( -DAPP_VERSION="${CMAKE_PROJECT_VERSION}" )
 add_definitions( -DCOMPILER_SPEC="${CMAKE_CXX_COMPILER_ID}-${CMAKE_CXX_COMPILER_VERSION}" )
 add_definitions( -DAPP_NAME="${PROJECT_NAME}")
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    message(INFO " detected GNU compiler passing, flag -mconsole")
+    set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
+endif()
 
-#set(CMAKE_EXE_LINKER_FLAGS "-mconsole")#console mode app// unrecognized by msvc
 #set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
 
 include("collector/collector.cmake")#need to be after project()
-include(FetchContent)
 
 #set(FRESH_DOWNLOAD on)#this is for recloning collections on first time configuration, but is not recommended, cause is tampering the behavior of the cache variable with the same name
 
@@ -65,7 +67,7 @@ add_executable(frittersFrontend
             ${IMGUI_BASIC_SOURCES}
             ${IMGUI_RENDERING_BACKEND_SOURCES}
             ${NFD_SOURCES}                                                  #optional for native file dialog
-            "3rdParty/imgui/imgui/libs/gl3w/GL/gl3w.c"                      #optional, in the end will be used something external, with collector
+            "3rdParty/imgui/imgui/libs/gl3w/GL/gl3w.c"                      #optional, in the end will be used something external, with collector, using fectch_content and target_sources
             "3rdParty/imgui/imgui/imgui_stdlib.cpp"                         #optional
             "3rdParty/imgui/imgui/imgui_demo.cpp"                           #optional
             "3rdParty/imgui/implot/implot.cpp"                              #optional
@@ -74,12 +76,32 @@ add_executable(frittersFrontend
             "3rdParty/imgui/addons/imguifilesystem/imguifilesystem.cpp"     #optional
             )
 
-collect( "https://github.com/PotatoBite/fritters"   "v0.0.13"   frittersFrontend )
-collect( "https://github.com/gabime/spdlog"         "v1.8.5"    frittersFrontend )
+
+
+collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
+collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
+#collect     ( "https://github.com/walterschell/Lua"         "v5.4.2"           frittersFrontend ) #missing install step
+#collect     ( "https://github.com/9chu/LuaJIT-cmake"     ""           frittersFrontend ) #error installing, missing header
+#collect     ( "https://github.com/LuaJIT/LuaJIT"         "v2.0.5"           frittersFrontend ) #is a makefile project and collector does not handle it yet
+#collect     ( "https://github.com/lubgr/lua-cmake"       ""                 frittersFrontend )#missing install step
+
+#collect_src ( "https://github.com/g-truc/glm.git"        "0.9.9.8"          frittersFrontend )
+
+#temporal solution for lua
+collect_src  ( "https://github.com/ThePhD/sol2.git"       "v3.2.2"           frittersFrontend )
+include_directories (${_sol2.git_DIR}/include/)
+collect_src  ( "https://github.com/walterschell/Lua.git"  "v5.4.2"           frittersFrontend ) 
+add_subdirectory( ${_Lua.git_DIR} )
+list(APPEND EXTRA_LIBS "lua_static")
+
+#collect( "E:\\coding\\Packages\\cpp\\sol2-3.2.2"    "v1.8.5"    frittersFrontend )
+
 #collect( "E:/coding/Projects/PotatoBite/fritters"  "v0.0.12"   frittersFrontend )      #development
 #collect( "https://github.com/skaslev/gl3w"         ""          frittersFrontend )      #not needed for now, but is important to start using it
 
 #collect( "https://github.com/Rezonality/zep" "v0.1.12" frittersFrontend )
+
+
 
 
 if (WIN32)#Windows settings
@@ -122,9 +144,9 @@ include(CPack)
 
 if(${SDL2_FOUND})
     if (WIN32)       #Windows settings
-        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32)#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static opengl32 shell32 ${EXTRA_LIBS})#for sdl_opengl3 by find package
     elseif(UNIX AND NOT APPLE)#for linux only
-        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static GL ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES})#for sdl_opengl3 by find package
+        target_link_libraries (frittersFrontend PRIVATE fritters_static SDL2::SDL2main SDL2::SDL2-static GL ${CMAKE_DL_LIBS} pthread ${GTK3_LIBRARIES} ${EXTRA_LIBS} )#for sdl_opengl3 by find package
         #target_compile_definitions(frittersFrontend PRIVATE ${GTK3_CFLAGS_OTHER})
     endif ()
 endif()
