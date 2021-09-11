@@ -23,3 +23,5 @@
 -compare the use of plain classic lua and luaJit
 -not building in linux
 -add test to save image, in linux without xorg not working
+-set badge for test on github, and add test to CI of course
+-remove the little hack used with collections spdlog and Lua

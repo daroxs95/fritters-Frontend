@@ -53,10 +53,10 @@ void RC4statsS_0(const std::list<std::string> &passwords, int occurrences[256][2
  * @brief Get the Probabilities after KSA  
  * 
  * @param passwords 
- * @param occurrence_probability 
+ * @param occurrenceProbability 
  * @param number_of_experiments 
  */
-void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrence_probability[256][256],const int number_of_experiments)
+void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float occurrenceProbability[256][256],const int number_of_experiments)
 {
     int occurrences[256][256];//static arrays are initialized to 0
 
@@ -72,29 +72,61 @@ void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float 
     
     for (int i = 0; i < 256; i++)
     {
-        arrayOccurrences2probabilities(occurrences[i], occurrence_probability[i], 256, number_of_experiments);
+        arrayOccurrences2probabilities(occurrences[i], occurrenceProbability[i], 256, number_of_experiments);
     }
 }
 
 /**
- * @brief Fills the array `occurrence_probability` with the number of ocurrences for each value after 
+ * @brief Fills the array `occurrenceProbability` with the number of ocurrences for each value after 
  * the KSA step of RC4 using `password`
  * 
- * @param occurrence_probability 
+ * @param occurrenceProbability 
  * @param password 
  */
 template<typename T>
-void FillOcurrencesafterKSA(T occurrence_probability[256][256],const std::string password)
+void FillOcurrencesafterKSA(T occurrenceProbability[256][256],const std::string password)
 {
         RC4 cipher(password);
         uint8_t temp_state_array[256];
         cipher.getStateArray(temp_state_array);
         for (size_t i = 0; i < 256; i++)
         {
-            occurrence_probability[i][temp_state_array[i]]++;
+            occurrenceProbability[i][temp_state_array[i]]++;
         }
 }
 
+
+/**
+ * @brief Fills the array `occurrenceProbability` with the number of ocurrences for each value after 
+ * the KSA step of RC4 using `password`, and returns string containing the first chars outputted by PRGA 
+ * 
+ * @tparam T 
+ * @param occurrenceProbability 
+ * @param password 
+ * @param PRGAoutputsNumber size of returned string 
+ * @return std::string 
+ */
+template<typename T>
+std::string FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],const std::string password, const int PRGAoutputsNumber)
+{
+        std::string res;
+        res.resize(PRGAoutputsNumber);
+        for (size_t i = 0; i < res.size(); i++)
+        {
+            res[i] = (uint8_t) 0;
+        }
+        
+        RC4 cipher(password);
+        uint8_t temp_state_array[256];
+        cipher.getStateArray(temp_state_array);
+        for (size_t i = 0; i < 256; i++)
+        {
+            occurrenceProbability[i][temp_state_array[i]]++;
+        }
+
+        cipher.inplaceCipher(res);
+        return res;
+}
 
 /**
  * @brief Fill the 2-dimensin array with value
@@ -182,15 +214,15 @@ float ProbAfterRC4sKSA_SARKAR(int u, int v, int N=256)//u,v can be uint8_t but f
 /**
  * @brief Get the Probabilities after KSA, based on theoretical formulae
  * 
- * @param occurrence_probability 
+ * @param occurrenceProbability 
  */
-void GetRealProbabilitiesRC4afterKSA(float occurrence_probability[256][256])
+void GetRealProbabilitiesRC4afterKSA(float occurrenceProbability[256][256])
 {
     for (int i = 0; i < 256; i++)
     {
         for (int ii = 0; ii < 256; ii++)
         {
-            occurrence_probability[i][ii] = ProbAfterRC4sKSA(i,ii);
+            occurrenceProbability[i][ii] = ProbAfterRC4sKSA(i,ii);
         }
     }
 }
@@ -199,15 +231,15 @@ void GetRealProbabilitiesRC4afterKSA(float occurrence_probability[256][256])
 /**
  * @brief Get the Probabilities after KSA, based on theoretical formulae by Sarkar and using matrix of transition probabilities 
  * 
- * @param occurrence_probability 
+ * @param occurrenceProbability 
  */
-void GetRealProbabilitiesRC4afterKSA_SARKAR(float occurrence_probability[256][256])
+void GetRealProbabilitiesRC4afterKSA_SARKAR(float occurrenceProbability[256][256])
 {
     for (int i = 0; i < 256; i++)
     {
         for (int ii = 0; ii < 256; ii++)
         {
-            occurrence_probability[i][ii] = ProbAfterRC4sKSA_SARKAR(i,ii);
+            occurrenceProbability[i][ii] = ProbAfterRC4sKSA_SARKAR(i,ii);
         }
     }
 }

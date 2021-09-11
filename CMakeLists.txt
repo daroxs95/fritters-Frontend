@@ -83,37 +83,12 @@ add_executable(frittersFrontend
 collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
 
-#collect     ( "E:/coding/Projects/mine/Lua"              "v5.4.2-install"   frittersFrontend )
-collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
-add_dependencies( _Lua _spdlog)
-
-#collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
-
-#collect     ( "https://github.com/walterschell/Lua"         "v5.4.2"           frittersFrontend ) #missing install step
-#collect     ( "https://github.com/9chu/LuaJIT-cmake"     ""           frittersFrontend ) #error installing, missing header
-#collect     ( "https://github.com/LuaJIT/LuaJIT"         "v2.0.5"           frittersFrontend ) #is a makefile project and collector does not handle it yet
-#collect     ( "https://github.com/lubgr/lua-cmake"       ""                 frittersFrontend )#missing install step
-
-#collect_src ( "https://github.com/g-truc/glm.git"        "0.9.9.8"          frittersFrontend )
-
-
 #temporal solution for lua
-collect_src  ( "https://github.com/ThePhD/sol2.git"       "v3.2.2"           frittersFrontend )
+collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
+add_dependencies( _Lua _spdlog)#temporal hack, without this linux build fails in _spdlog due cmake error: unknown flag -pthread
+collect_src  ( "https://github.com/ThePhD/sol2.git"      "v3.2.2"           frittersFrontend )
 include_directories (${_sol2.git_DIR}/include/)
 list(APPEND EXTRA_LIBS "lua")
-
-# this fails in linux
-#collect_src  ( "https://github.com/walterschell/Lua.git"  "v5.4.2"           frittersFrontend ) 
-#add_subdirectory( ${_Lua.git_DIR} )
-#list(APPEND EXTRA_LIBS "lua_static")
-
-
-#collect( "E:\\coding\\Packages\\cpp\\sol2-3.2.2"    "v1.8.5"    frittersFrontend )
-
-#collect( "E:/coding/Projects/PotatoBite/fritters"  "v0.0.12"   frittersFrontend )      #development
-#collect( "https://github.com/skaslev/gl3w"         ""          frittersFrontend )      #not needed for now, but is important to start using it
-
-#collect( "https://github.com/Rezonality/zep" "v0.1.12" frittersFrontend )
 
 
 
