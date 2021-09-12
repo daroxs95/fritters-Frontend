@@ -76,6 +76,7 @@ add_executable(frittersFrontend
             "3rdParty/imgui/implot/implot_items.cpp"                        #optional
             "3rdParty/imgui/implot/implot_demo.cpp"                         #optional
             "3rdParty/imgui/addons/imguifilesystem/imguifilesystem.cpp"     #optional
+            #"3rdParty/imgui_lua_bindings/imgui_lua_bindings.cpp"            #optional
             )
 
 
@@ -158,6 +159,7 @@ set (RequiredExtras
     "assets/passwords.txt"
     "assets/imgui.ini"
     "3rdParty/imgui/fonts/Roboto-Medium.ttf"
+    "scripts/lua/main.lua"
 )
 get_target_property(BINARY_EXECUTABLE_OUTPUT frittersFrontend RUNTIME_OUTPUT_DIRECTORY)
 foreach (_file ${RequiredExtras})

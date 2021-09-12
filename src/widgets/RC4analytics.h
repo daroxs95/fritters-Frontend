@@ -17,6 +17,7 @@
 #include "../random_password.h"
 #include "../crypto.h"
 #include "../imgui_helpers.h"
+#include "../lua_binders.h"
 #include "../gl_helpers.h"
 #include <easy_imgui/spdlog_helper.h>
 
@@ -24,6 +25,7 @@
 #include "About.h"
 #include "Help.h"
 
+#include <sol/sol.hpp>
 
 struct RC4PRGAsingleByteOutputProbability4eachValue
 {
@@ -103,72 +105,92 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static bool link2KSAkeys = true; //not in use, but will be
 
 
+            //Lua State
+            static sol::state lua;
+            static sol::load_result mainScript;
+            static bool mainScriptCorrect = false;
 
-            //put this in some conditional to no execute it every time in the main loop
+            //Initializing some stuff, ie: run it only once
             static bool inited = false;
             if (!inited)
             {
+                //Binding ImGui to Lua state
+                bindImGui2sol2(lua);
+                mainScript = lua.load_file("main.lua");
+                if (!mainScript.valid()) 
+                {
+                    sol::error err = mainScript;
+                    logger.warn("Failed to load main.lua: {}", err.what() );
+                }
+                else mainScriptCorrect = true;
+                
+
                 logger.info("jarray max size = {}", jArrays.max_size());
-                strcpy(practiceProbabilities[0].id, "Uniformly distributed keys, fully random chars/digits");
-                practiceProbabilities[0].getPassword = []()->std::string{
-                    return getRandomString(32);
-                };
 
-                strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0}");
-                practiceProbabilities[1].getPassword = []()->std::string{
-                    return getRandomStringCustomDistribution(2);
-                };
+                //Adding initial test to do in `practiceProbabilities`
+                {
+                    strcpy(practiceProbabilities[0].id, "Uniformly distributed keys, fully random chars/digits");
+                    practiceProbabilities[0].getPassword = []()->std::string{
+                        return getRandomString(32);
+                    };
+
+                    strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0}");
+                    practiceProbabilities[1].getPassword = []()->std::string{
+                        return getRandomStringCustomDistribution(2);
+                    };
 
 
-                strcpy(practiceProbabilities[2].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32");
-                practiceProbabilities[2].getPassword = []()->std::string{
-                    int size = rand()%29 + 3;
-                    if (size % 2 != 0) size++;
-                    
-                    return getRandomStringCustomDistribution(size);
-                };
+                    strcpy(practiceProbabilities[2].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32");
+                    practiceProbabilities[2].getPassword = []()->std::string{
+                        int size = rand()%29 + 3;
+                        if (size % 2 != 0) size++;
+                        
+                        return getRandomStringCustomDistribution(size);
+                    };
 
-                strcpy(practiceProbabilities[3].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}, jarray fill, variable and even keylength, 2 <= keylength <= 32");
-                practiceProbabilities[3].getPassword = []()->std::string{
-                    int size = rand()%30 + 2;
-                    if (size % 2 != 0) size++;
-                    std::string a = getRandomStringCustomDistribution(size);
+                    strcpy(practiceProbabilities[3].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}, jarray fill, variable and even keylength, 2 <= keylength <= 32");
+                    practiceProbabilities[3].getPassword = []()->std::string{
+                        int size = rand()%30 + 2;
+                        if (size % 2 != 0) size++;
+                        std::string a = getRandomStringCustomDistribution(size);
 
-                    //need to store small number of jArrays, couse each struct is like 2kb and the ram gets eaten really fast,
-                    // and eventually the app could crash, ie for 2*10^6 keys 
-                    if(jArrays.size() < maxNumJArrays)
-                    {
-                        jArrays.resize(jArrays.size() + 1);
-
-                        uint8_t temp[256];
-                        RC4 cipher("password");
-                        cipher.KSA(a,temp);
-                        for (short i = 0; i < 256; i++)
+                        //need to store small number of jArrays, couse each struct is like 2kb and the ram gets eaten really fast,
+                        // and eventually the app could crash, ie for 2*10^6 keys 
+                        if(jArrays.size() < maxNumJArrays)
                         {
-                            if(temp[i] % 2 != 0) jArrays.back().isOdd[i] = true;
-                            else jArrays.back().isOdd[i] = false;
+                            jArrays.resize(jArrays.size() + 1);
 
-                            jArrays.back().values[i] = static_cast<float>(temp[i]);
+                            uint8_t temp[256];
+                            RC4 cipher("password");
+                            cipher.KSA(a,temp);
+                            for (short i = 0; i < 256; i++)
+                            {
+                                if(temp[i] % 2 != 0) jArrays.back().isOdd[i] = true;
+                                else jArrays.back().isOdd[i] = false;
+
+                                jArrays.back().values[i] = static_cast<float>(temp[i]);
+                            }
                         }
-                    }
-                    
-                    return a;
-                };
+                        
+                        return a;
+                    };
 
-                strcpy(practiceProbabilities[4].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6");
-                practiceProbabilities[4].getPassword = []()->std::string{
-                    return getRandomStringCustomDistribution(6);
-                };
+                    strcpy(practiceProbabilities[4].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6");
+                    practiceProbabilities[4].getPassword = []()->std::string{
+                        return getRandomStringCustomDistribution(6);
+                    };
 
-                strcpy(practiceProbabilities[5].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 8");
-                practiceProbabilities[5].getPassword = []()->std::string{
-                    return getRandomStringCustomDistribution(8);
-                };
+                    strcpy(practiceProbabilities[5].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 8");
+                    practiceProbabilities[5].getPassword = []()->std::string{
+                        return getRandomStringCustomDistribution(8);
+                    };
 
-                strcpy(practiceProbabilities[6].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 256");
-                practiceProbabilities[6].getPassword = []()->std::string{
-                    return getRandomStringCustomDistribution(256);
-                };
+                    strcpy(practiceProbabilities[6].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 256");
+                    practiceProbabilities[6].getPassword = []()->std::string{
+                        return getRandomStringCustomDistribution(256);
+                    };
+                }
+
 
                 inited = true;
             }
@@ -273,7 +295,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             //ImGui::PushItemWidth(ImGui::GetFontSize() * -13);
             ImGui::InputInt("Number of passwords to generate ",&passwordsNumber);
 
-           
+            //run lua test script, TODO improve error check
+            if(mainScriptCorrect) mainScript();
+
             if(!calculating)
             {   
                 if (ImGui::Button("Calculate"))

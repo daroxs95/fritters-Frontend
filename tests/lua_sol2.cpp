@@ -18,5 +18,19 @@ int main(int, char*[])
 		return -1;
 	}
 
+	//do the test with this
+	/*
+	// load string without execute
+	sol::load_result script2 = lua.load("a = 'test'");
+	//execute
+	sol::protected_function_result script2result = script2();
+	// optionally, check if it worked
+	if (script2result.valid()) {
+		// yay!
+	}
+	else {
+		// aww
+	}
+	*/
 	return 0;
 }
