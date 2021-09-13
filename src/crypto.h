@@ -5,6 +5,41 @@
 #include <list>
 #include <cmath>
 
+
+struct RC4PRGAsingleByteOutputProbability4eachValue
+{
+    long double realOcurrences[256];    //number of each byte ocurrence for some K (K = index)
+    float occurrenceProbability[256];    //probability of each byte ocurrence for some K
+};
+
+
+//struct of base calculation type of probabilities after KSA in practice, any type of calculation needed experimentally
+//should be doable using this
+struct RC4calcInstanceInPractice
+{
+    char id[200];                                                               //id for each calculation
+    bool isActive = true;
+    long double realOccurrenceProbability[256][256];                          //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
+    float occurrenceProbability[256][256];                                     //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
+    std::function<std::string()> getPassword;                                   //function to know distribution of key(it generates keys with determined distribution)
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilities;
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1eq0;
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1neq0;
+};
+
+struct RC4calcInstanceTheoretical
+{
+    char id[100];
+    float occurrenceProbability[256][256]; 
+    std::function<double(uint8_t u, uint8_t v)> getProbability;
+};
+            
+struct jArrayStruct
+{
+    float values[256];
+    float isOdd[256];//set to float cause ImGui histogram does not support bool
+};
+
 template<typename T>
 void arrayOccurrences2probabilities(const T occurrences[], float probabilities[],const int arr_size, const int number_of_experiments)
 {
@@ -76,7 +111,7 @@ void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float 
     }
 }
 
-/**
+/**@file
  * @brief Fills the array `occurrenceProbability` with the number of ocurrences for each value after 
  * the KSA step of RC4 using `password`
  * 
@@ -86,46 +121,35 @@ void GetProbabilitiesRC4afterKSA(const std::list<std::string> &passwords, float 
 template<typename T>
 void FillOcurrencesafterKSA(T occurrenceProbability[256][256],const std::string password)
 {
-        RC4 cipher(password);
-        uint8_t temp_state_array[256];
-        cipher.getStateArray(temp_state_array);
-        for (size_t i = 0; i < 256; i++)
-        {
-            occurrenceProbability[i][temp_state_array[i]]++;
-        }
+    RC4 cipher(password);
+    uint8_t temp_state_array[256];
+    cipher.getStateArray(temp_state_array);
+    for (size_t i = 0; i < 256; i++)
+    {
+        occurrenceProbability[i][temp_state_array[i]]++;
+    }
 }
 
 
-/**
- * @brief Fills the array `occurrenceProbability` with the number of ocurrences for each value after 
- * the KSA step of RC4 using `password`, and returns string containing the first chars outputted by PRGA 
- * 
- * @tparam T 
- * @param occurrenceProbability 
- * @param password 
- * @param PRGAoutputsNumber size of returned string 
- * @return std::string 
- */
-template<typename T>
-std::string FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],const std::string password, const int PRGAoutputsNumber)
-{
-        std::string res;
-        res.resize(PRGAoutputsNumber);
-        for (size_t i = 0; i < res.size(); i++)
-        {
-            res[i] = (uint8_t) 0;
-        }
-        
-        RC4 cipher(password);
-        uint8_t temp_state_array[256];
-        cipher.getStateArray(temp_state_array);
-        for (size_t i = 0; i < 256; i++)
-        {
-            occurrenceProbability[i][temp_state_array[i]]++;
-        }
 
-        cipher.inplaceCipher(res);
-        return res;
+template<typename T>
+void FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbability,std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1eq0,std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1neq0, const std::string password, const int PRGAoutputsNumber)
+{   
+    RC4 cipher(password);
+    uint8_t temp_state_array[256];
+    cipher.getStateArray(temp_state_array);
+    for (size_t i = 0; i < 256; i++)
+    {
+        occurrenceProbability[i][temp_state_array[i]]++;
+    }
+
+    for (size_t ii = 0; ii < PRGAoutputsNumber; ii++)
+    {
+        uint8_t k = cipher.getKeystreamValueDEBUG();
+        if(temp_state_array[1] == 0) PRGAoccurrenceProbabilityS1eq0[ii].realOcurrences[k]++;
+        else PRGAoccurrenceProbabilityS1neq0[ii].realOcurrences[k]++;
+        PRGAoccurrenceProbability[ii].realOcurrences[k]++;
+    }
 }
 
 /**
@@ -149,6 +173,26 @@ void InitArrayTo(T array[256][256],const T value)
     }
 }
 
+/**
+ * @brief Fill the 1-dimensin array with value
+ * 
+ * @tparam T Type of array
+ * @param array array to fill
+ * @param value value to fill array with
+ * @param xsize size of firs index of array
+ * @param ysize size of second index of array
+ */
+template<typename T>
+void InitArrayTo(T array[256],const T value)
+{
+    for (size_t i = 0; i < 256; i++)
+    {
+        for (size_t ii = 0; ii < 256; ii++)
+        {
+            array[i][ii] = value;
+        }
+    }
+}
 
 /**
  * @brief Calculates the probability of v to end in position u after the end of RC4's KSA 

@@ -26,3 +26,4 @@
 -set badge for test on github, and add test to CI of course
 -remove the little hack used with collections spdlog and Lua
 -not printing to cmd/terminal from lua, maybe something to do with spdlogger
+-fix whe increases number bytes of output in PRGA analysis not resizing the vectors but being able to slide to that position, meaning crash

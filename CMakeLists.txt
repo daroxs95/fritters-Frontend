@@ -81,7 +81,7 @@ add_executable(frittersFrontend
 
 
 
-collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.13"          frittersFrontend )
+collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.14"          frittersFrontend )
 collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
 
 #temporal solution for lua
@@ -188,3 +188,6 @@ install(TARGETS frittersFrontend
 
 #add tests
 include("tests/tests.cmake")
+
+#generate doc
+include("doc.cmake")

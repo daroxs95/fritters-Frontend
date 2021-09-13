@@ -27,40 +27,6 @@
 
 #include <sol/sol.hpp>
 
-struct RC4PRGAsingleByteOutputProbability4eachValue
-{
-    long double realOcurrences[256];    //number of each byte ocurrence for some K (K = index)
-    float occurrenceProbability[256];    //probability of each byte ocurrence for some K
-};
-
-
-//struct of base calculation type of probabilities after KSA in practice, any type of calculation needed experimentally
-//should be doable using this
-struct RC4calcInstanceInPractice
-{
-    char id[200];                                                               //id for each calculation
-    bool isActive = true;
-    long double realOccurrenceProbability[256][256];                          //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-    float occurrenceProbability[256][256];                                     //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-    std::function<std::string()> getPassword;                                   //function to know distribution of key(it generates keys with determined distribution)
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilities;
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1eq0;
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1neq0;
-};
-
-struct RC4calcInstanceTheoretical
-{
-    char id[100];
-    float occurrenceProbability[256][256]; 
-    std::function<double(uint8_t u, uint8_t v)> getProbability;
-};
-            
-struct jArrayStruct
-{
-    float values[256];
-    float isOdd[256];//set to float cause ImGui histogram does not support bool
-};
-
 
 void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              //RC4 multicipher from file
 {
@@ -114,7 +80,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static bool inited = false;
             if (!inited)
             {
-                //Binding ImGui to Lua state
+                //Binding ImGui to Lua state and loading main.lua
                 bindImGui2sol2(lua);
                 mainScript = lua.load_file("main.lua");
                 if (!mainScript.valid()) 
@@ -344,20 +310,21 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             InitArrayTo(practiceProbabilities[j].realOccurrenceProbability,(long double)0);
                             practiceProbabilities[j].PRGAoutputsProbabilities.clear();
                             practiceProbabilities[j].PRGAoutputsProbabilities.resize(outputBytesNumberPRGA);
+                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.clear();
+                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.resize(outputBytesNumberPRGA);
+                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.clear();
+                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.resize(outputBytesNumberPRGA);
 
                             for (size_t i = 0 ; i < passwordsNumber; i++)
                             {
-                                auto outputPRGA = FillOcurrencesAfterKSAreturnPRGAstream(
-                                                        practiceProbabilities[j].realOccurrenceProbability,
-                                                        practiceProbabilities[j].getPassword(),
-                                                        outputBytesNumberPRGA
-                                                    );
-
-                                for (size_t ii = 0; ii < outputPRGA.size(); ii++)
-                                {
-                                    practiceProbabilities[j].PRGAoutputsProbabilities[ii].realOcurrences[(uint8_t)outputPRGA[ii]]++;
-                                }
-
+                                FillOcurrencesAfterKSAreturnPRGAstream(
+                                    practiceProbabilities[j].realOccurrenceProbability,
+                                    practiceProbabilities[j].PRGAoutputsProbabilities,
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0,
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0,
+                                    practiceProbabilities[j].getPassword(),
+                                    outputBytesNumberPRGA
+                                );
 
                             }
                                
@@ -376,6 +343,18 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                 arrayOccurrences2probabilities(
                                     practiceProbabilities[j].PRGAoutputsProbabilities[i].realOcurrences,
                                     practiceProbabilities[j].PRGAoutputsProbabilities[i].occurrenceProbability,
+                                    256,
+                                    passwordsNumber
+                                );
+                                arrayOccurrences2probabilities(
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].realOcurrences,
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].occurrenceProbability,
+                                    256,
+                                    passwordsNumber
+                                );
+                                arrayOccurrences2probabilities(
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].realOcurrences,
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].occurrenceProbability,
                                     256,
                                     passwordsNumber
                                 );
@@ -649,7 +628,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 ImGui::SameLine();
                 ImGui::SliderInt("Index K( byte output )", &Kvalue, 0, outputBytesNumberPRGA - 1);//change way of adding label for something more performant
                 ImGui::PushItemWidth(-1);
-                if(ImGui::CollapsingHeader("Practical probability of each value to be at output byte"))
+                if(ImGui::CollapsingHeader("Practical probability of each value to be at output byte k"))
                 {
                     //drawing ImGui::PlotHistogram for each item in vector of structs RC4_calc_instance_in_practice
                     for (size_t ii = 0; ii < practiceProbabilities.size(); ii++)
@@ -659,6 +638,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         if(ImGui::TreeNodeEx(practiceProbabilities[ii].id))
                         {
                             //check if needed a label for correct behavior, widgets with same labels apparently share properties, like focus
+                            ImGui::Text(" Using all keys  ");
                             ImGui::PlotHistogram("", 
                                                 practiceProbabilities[ii].PRGAoutputsProbabilities[Kvalue].occurrenceProbability, 
                                                 IM_ARRAYSIZE(practiceProbabilities[ii].PRGAoutputsProbabilities[Kvalue].occurrenceProbability), 
@@ -666,6 +646,27 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 NULL, 
                                                 0.001f, 
                                                 get_max(practiceProbabilities[ii].PRGAoutputsProbabilities[Kvalue].occurrenceProbability,256), 
+                                                ImVec2(0,80)
+                                            );
+                            ImGui::Text(" Using keys generating S[1] = 0 (state array after KSA)  ");
+                            ImGui::PlotHistogram("", 
+                                                practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].occurrenceProbability, 
+                                                IM_ARRAYSIZE(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].occurrenceProbability), 
+                                                0, 
+                                                NULL, 
+                                                0.001f, 
+                                                get_max(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].occurrenceProbability,256), 
+                                                ImVec2(0,80)
+                                            );
+                            ImGui::Text(" Using keys generating S[1] != 0 (state array after KSA)  ");
+
+                            ImGui::PlotHistogram("", 
+                                                practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].occurrenceProbability, 
+                                                IM_ARRAYSIZE(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].occurrenceProbability), 
+                                                0, 
+                                                NULL, 
+                                                0.001f, 
+                                                get_max(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].occurrenceProbability,256), 
                                                 ImVec2(0,80)
                                             );
                             ImGui::TreePop();
