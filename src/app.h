@@ -24,12 +24,12 @@
 #include "widgets/RC4cipher.h"
 
 
-struct app_state
+struct appState
 {
 };
 
 
-static void app(app_state &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window* window)
+static void app(appState &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window* window)
 {       
         /*
         //basic example

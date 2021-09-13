@@ -30,7 +30,7 @@ int main(void)
     logger.info("Starting app...");
 
     //create and fill state
-    app_state state;
+    appState state;
 
     srand((unsigned) time(0));//for generating random strings
     
