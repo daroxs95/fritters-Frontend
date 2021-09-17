@@ -54,11 +54,15 @@ static void app(appState &state, ImVec4 &clear_color , ImGuiIO &io, SDL_Window* 
         }
         */
         ImGui::DockSpaceOverViewport();//not needed but useful
+
+        static bool demowin = true;
+        ImGui::ShowDemoWindow(&demowin);
+        ImPlot::ShowDemoWindow();
+        
         RC4cipher();
         HexStringConverter();
         RC4Analytics(io, window);
 
-        ImPlot::ShowDemoWindow();
 
         //std::cout<< getRandomStringCustomDistribution(32) << std::endl;
 

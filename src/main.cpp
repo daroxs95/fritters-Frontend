@@ -73,8 +73,8 @@ int main(void)
         [&]()->void{
             //plot
             ImPlot::DestroyContext();
-        },
-        true);
+        }
+        );
 
 
 

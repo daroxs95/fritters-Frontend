@@ -46,7 +46,7 @@ using namespace gl;
 #endif
 
 // Main code
-int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* window)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io, SDL_Window* window)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui, bool show_demo_window = true )
+int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* window)> app_callback, ImVec4 &clear_color, std::function<void(ImGuiIO &io, SDL_Window* window)> setup_imgui = default_setup_imgui, std::function<void(void)> end_imgui = default_end_imgui)
 {
     //get instance of logger
     static auto logger = getMultiSinkLogger();
@@ -182,15 +182,12 @@ int m_imgui_app(const char* name, std::function<void(ImGuiIO &io, SDL_Window* wi
         ImGui_ImplSDL2_NewFrame(window);
         ImGui::NewFrame();
 
+
         // 2. Show a simple window that we create ourselves. We use a Begin/End pair to created a named window.
         {
             app_callback(io, window);
         }
         
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
 
 
         // Rendering

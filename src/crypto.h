@@ -6,39 +6,69 @@
 #include <cmath>
 
 
-struct RC4PRGAsingleByteOutputProbability4eachValue
-{
-    long double realOcurrences[256];    //number of each byte ocurrence for some K (K = index)
-    float occurrenceProbability[256];    //probability of each byte ocurrence for some K
-};
-
-
-//struct of base calculation type of probabilities after KSA in practice, any type of calculation needed experimentally
-//should be doable using this
-struct RC4calcInstanceInPractice
-{
-    char id[200];                                                               //id for each calculation
-    bool isActive = true;
-    long double realOccurrenceProbability[256][256];                          //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-    float occurrenceProbability[256][256];                                     //holds probability of second_index to be on first_index at S_0(first state array of RC4), is float cause plothistogram does not support double
-    std::function<std::string()> getPassword;                                   //function to know distribution of key(it generates keys with determined distribution)
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilities;
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1eq0;
-    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1neq0;
-};
-
-struct RC4calcInstanceTheoretical
-{
-    char id[100];
-    float occurrenceProbability[256][256]; 
-    std::function<double(uint8_t u, uint8_t v)> getProbability;
-};
-            
 struct jArrayStruct
 {
     float values[256];
     float isOdd[256];//set to float cause ImGui histogram does not support bool
 };
+
+
+/**
+ * @brief Holds the probabilities of a output byte of PRGA to be any of posibles bytes.
+ * 
+ */
+struct RC4PRGAsingleByteOutputProbability4eachValue
+{
+    ///number of each byte ocurrence for some K (K = index)
+    long double realOcurrences[256];
+
+    ///probability of each byte ocurrence for some K
+    float occurrenceProbability[256];    
+};    
+
+
+/** Struct of base calculation type of probabilities after KSA in practice, any type of calculation 
+ * needed experimentally should be doable using this
+ * 
+ */
+struct RC4calcInstanceInPractice
+{
+    ///id for each calculation
+    char id[200];
+    ///to activate/deactivate the calculations/use of a instance without destroying it                                                             
+    bool isActive = true;
+    ///number of experiments executed
+    size_t experimentsNumber = 0;
+    /**holds number of of times that `second_index`(as byte) ends on `first_index` position 
+     * at `S`(state array of RC4) after KSA, after the experiments.
+     */ 
+    long double realOccurrenceProbability[256][256];    
+    /**holds the probability of `second_index`(as byte) ending on `first_index` position 
+     * at `S`(state array of RC4) after KSA, after the experiments.
+     * ie: `occurrenceProbability[x][y] = realOccurrenceProbability[x][y] / experimentsNumber`
+     * is in `floats` because vanilla plotter used only supports `float`.
+     */                  
+    float occurrenceProbability[256][256];      
+    ///function to know distribution of key(it generates keys with determined distribution)                           
+    std::function<std::string()> getPassword;
+    /**vector to store probabilities of a secuence of outputs bytes from PRGA, 
+     * ie: position 0 is for first byte outputed, position 1 for the second byte and so on   
+     */                             
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilities;
+    std::vector<jArrayStruct> *jArrays4eachPass = nullptr;
+    /**vector to store probabilities of a secuence of outputs bytes from PRGA, 
+     * but using only data from passwords that generated a state array after KSA with `0` on the position `1`
+     * ie: `S[1]=0`
+     */ 
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1eq0;
+    /**vector to store probabilities of a secuence of outputs bytes from PRGA, 
+     * but using only data from passwords that generated a state array after KSA with the position `1` diferent than `0`
+     * ie: `S[1]!=0`, `S[1] \neq 0`
+     */ 
+    std::vector<RC4PRGAsingleByteOutputProbability4eachValue> PRGAoutputsProbabilitiesS1neq0;
+};
+
+        
 
 template<typename T>
 void arrayOccurrences2probabilities(const T occurrences[], float probabilities[],const int arr_size, const int number_of_experiments)
@@ -133,7 +163,14 @@ void FillOcurrencesafterKSA(T occurrenceProbability[256][256],const std::string 
 
 
 template<typename T>
-void FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbability,std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1eq0,std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1neq0, const std::string password, const int PRGAoutputsNumber)
+void FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],
+        std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbability,
+        std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1eq0,
+        std::vector<RC4PRGAsingleByteOutputProbability4eachValue> &PRGAoccurrenceProbabilityS1neq0,
+        const std::string password, 
+        const int PRGAoutputsNumber,
+        jArrayStruct *jArray = NULL
+    )
 {   
     RC4 cipher(password);
     uint8_t temp_state_array[256];
@@ -145,10 +182,19 @@ void FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],st
 
     for (size_t ii = 0; ii < PRGAoutputsNumber; ii++)
     {
+        uint8_t retrievedJindexValue = cipher.getJindex();
         uint8_t k = cipher.getKeystreamValueDEBUG();
         if(temp_state_array[1] == 0) PRGAoccurrenceProbabilityS1eq0[ii].realOcurrences[k]++;
         else PRGAoccurrenceProbabilityS1neq0[ii].realOcurrences[k]++;
         PRGAoccurrenceProbability[ii].realOcurrences[k]++;
+
+        //check vs the size of arrays inside jArrayStruct 
+        if(jArray && ii < 256)
+        {
+            (*jArray).values[ii] = retrievedJindexValue;
+            (*jArray).isOdd[ii] = (retrievedJindexValue % 2 != 0)? true : false;
+
+        }
     }
 }
 

@@ -8,7 +8,7 @@
 -Im starting to depend too much in SDL, check this.
 -put a description field in structs representing probabilities calculations, to render it as a tooltip
 -find a way to deactivate spdlog on compile time, to not link it or not compile it, or something, in main.cpp there is a try in defines but is not working
--the app crashes when calculating and trying to render the content of ccollapsing header "j indexes for each an..."
+-the app crashes when calculating and trying to render the content of ccollapsing header "j indexes for each an..." and some other plots
 -need to set an option to compile console mode on all platforms and compilers
 -add a release for mac
 -not saving images in linux with wayland
@@ -21,9 +21,6 @@
 -fix the use of file containing passwords
 -make the wigets resizables, mainly the plots, and mainly when zoomed
 -compare the use of plain classic lua and luaJit
--not building in linux
--add test to save image, in linux without xorg not working
 -set badge for test on github, and add test to CI of course
 -remove the little hack used with collections spdlog and Lua
--not printing to cmd/terminal from lua, maybe something to do with spdlogger
 -fix whe increases number bytes of output in PRGA analysis not resizing the vectors but being able to slide to that position, meaning crash

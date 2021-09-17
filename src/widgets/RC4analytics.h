@@ -61,6 +61,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
 
             static std::vector<jArrayStruct>        jArrays;
+            static std::vector<jArrayStruct>        jArraysPRGA;
             static const int                        maxNumJArrays = 10000; 
 
 
@@ -80,7 +81,10 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static bool inited = false;
             if (!inited)
             {
+                jArraysPRGA.resize(maxNumJArrays);
+                
                 //Binding ImGui to Lua state and loading main.lua
+                lua.open_libraries(sol::lib::base);
                 bindImGui2sol2(lua);
                 mainScript = lua.load_file("main.lua");
                 if (!mainScript.valid()) 
@@ -140,6 +144,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         
                         return a;
                     };
+                    practiceProbabilities[3].jArrays4eachPass = new std::vector<jArrayStruct>;
+
 
                     strcpy(practiceProbabilities[4].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6");
                     practiceProbabilities[4].getPassword = []()->std::string{
@@ -155,6 +161,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     practiceProbabilities[6].getPassword = []()->std::string{
                         return getRandomStringCustomDistribution(256);
                     };
+                    practiceProbabilities[6].jArrays4eachPass = new std::vector<jArrayStruct>;
+
                 }
 
 
@@ -314,6 +322,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.resize(outputBytesNumberPRGA);
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.clear();
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.resize(outputBytesNumberPRGA);
+                            if(practiceProbabilities[j].jArrays4eachPass) 
+                                (*practiceProbabilities[j].jArrays4eachPass).resize(maxNumJArrays);
 
                             for (size_t i = 0 ; i < passwordsNumber; i++)
                             {
@@ -323,7 +333,18 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0,
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0,
                                     practiceProbabilities[j].getPassword(),
-                                    outputBytesNumberPRGA
+                                    outputBytesNumberPRGA,
+                                    [&]()->jArrayStruct*
+                                    {
+                                        if (practiceProbabilities[j].jArrays4eachPass 
+                                                &&
+                                                (*practiceProbabilities[j].jArrays4eachPass).size() > i
+                                            ) 
+                                            {
+                                                return &(*practiceProbabilities[j].jArrays4eachPass)[i];
+                                            }
+                                        else return nullptr;
+                                    }()
                                 );
 
                             }
@@ -669,6 +690,31 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].occurrenceProbability,256), 
                                                 ImVec2(0,80)
                                             );
+
+                            if(practiceProbabilities[ii].jArrays4eachPass)
+                            {
+                                static int passwordIndex = 0;
+                                ImGui::SliderInt("Password number: ", &passwordIndex, 0, (*practiceProbabilities[ii].jArrays4eachPass).size() - 1);
+                                ImGui::PlotHistogram("", 
+                                                    (*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].values, 
+                                                    IM_ARRAYSIZE((*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].values), 
+                                                    0, 
+                                                    NULL, 
+                                                    0.001f, 
+                                                    get_max((*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].values,256), 
+                                                    ImVec2(0,80)
+                                                );
+                                ImGui::PlotHistogram("", 
+                                                    (*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].isOdd, 
+                                                    IM_ARRAYSIZE((*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].isOdd), 
+                                                    0, 
+                                                    NULL, 
+                                                    0.001f, 
+                                                    get_max((*practiceProbabilities[ii].jArrays4eachPass)[passwordIndex].isOdd,256), 
+                                                    ImVec2(0,80)
+                                                );
+                            }
+
                             ImGui::TreePop();
                             ImGui::Separator();
                         }

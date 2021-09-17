@@ -14,6 +14,7 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 #set(CMAKE_EXE_LINKER_FLAGS "-v")#verbosity in linking call// unrecognized by msvc
+set(FRESH_DOWNLOAD OFF)
 
 include("collector/collector.cmake")#need to be after project()
 
@@ -81,17 +82,14 @@ add_executable(frittersFrontend
 
 
 
-collect     ( "https://github.com/PotatoBite/fritters"   "v0.0.14"          frittersFrontend )
-collect     ( "https://github.com/gabime/spdlog"         "v1.8.5"           frittersFrontend )
+collect     ( "https://github.com/PotatoBite/fritters"      "v0.0.15"          frittersFrontend )
+collect     ( "https://github.com/gabime/spdlog"            "v1.8.5"           frittersFrontend )
+collect     ( "https://github.com/ThePhD/sol2"              "v3.2.2"           frittersFrontend )
 
 #temporal solution for lua
 collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
 add_dependencies( _Lua _spdlog)#temporal hack, without this linux build fails in _spdlog due cmake error: unknown flag -pthread
-collect_src  ( "https://github.com/ThePhD/sol2.git"      "v3.2.2"           frittersFrontend )
-include_directories (${_sol2.git_DIR}/include/)
 list(APPEND EXTRA_LIBS "lua")
-
-
 
 
 if (WIN32)#Windows settings
@@ -190,4 +188,4 @@ install(TARGETS frittersFrontend
 include("tests/tests.cmake")
 
 #generate doc
-include("doc.cmake")
+include("docs/docs.cmake")
