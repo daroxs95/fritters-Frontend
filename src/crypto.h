@@ -12,7 +12,6 @@ struct jArrayStruct
     float isOdd[256];//set to float cause ImGui histogram does not support bool
 };
 
-
 /**
  * @brief Holds the probabilities of a output byte of PRGA to be any of posibles bytes.
  * 
@@ -24,6 +23,8 @@ struct RC4PRGAsingleByteOutputProbability4eachValue
 
     ///probability of each byte ocurrence for some K
     float occurrenceProbability[256];    
+    ///number of experiments executed
+    size_t experimentsNumber = 0;
 };    
 
 
@@ -49,6 +50,20 @@ struct RC4calcInstanceInPractice
      * is in `floats` because vanilla plotter used only supports `float`.
      */                  
     float occurrenceProbability[256][256];      
+
+    /**
+     * @brief Get the Occurrence Probability P[u] = v, just implemented to temporal use from Lua
+     * 
+     * @param u 
+     * @param v 
+     * @return float 
+     */
+    float getOccurrenceProbability(const int &u, const int &v)
+    {
+        return occurrenceProbability[u][v];
+        return 1;
+    }
+    
     ///function to know distribution of key(it generates keys with determined distribution)                           
     std::function<std::string()> getPassword;
     /**vector to store probabilities of a secuence of outputs bytes from PRGA, 
@@ -184,9 +199,21 @@ void FillOcurrencesAfterKSAreturnPRGAstream(T occurrenceProbability[256][256],
     {
         uint8_t retrievedJindexValue = cipher.getJindex();
         uint8_t k = cipher.getKeystreamValueDEBUG();
-        if(temp_state_array[1] == 0) PRGAoccurrenceProbabilityS1eq0[ii].realOcurrences[k]++;
-        else PRGAoccurrenceProbabilityS1neq0[ii].realOcurrences[k]++;
+
+
+
+        if(temp_state_array[1] == 0) 
+        {
+            PRGAoccurrenceProbabilityS1eq0[ii].realOcurrences[k]++;
+            PRGAoccurrenceProbabilityS1eq0[ii].experimentsNumber++;
+        }
+        else 
+        {
+            PRGAoccurrenceProbabilityS1neq0[ii].realOcurrences[k]++;
+            PRGAoccurrenceProbabilityS1neq0[ii].experimentsNumber++;
+        }
         PRGAoccurrenceProbability[ii].realOcurrences[k]++;
+        PRGAoccurrenceProbability[ii].experimentsNumber++;
 
         //check vs the size of arrays inside jArrayStruct 
         if(jArray && ii < 256)
@@ -275,6 +302,35 @@ float ProbAfterRC4sKSA(int u, int v, int N=256)//u,v can be uint8_t but for more
     return pstuv*pow(kop, N - t) + (1-pstuv)*pok*pow(kop,v)*(1-pow(kop,N - t));
 }
 
+/**
+ * @brief Calculates the probability of v to end in position u after the end of RC4's KSA 
+ * 
+ * The implementation is not optimal in performance because is written for clarity. 
+ * 
+ * @param N 
+ * @return float probability
+ */
+float ProbAfterRC4sKSA2(int u, int v, int N=256)//u,v can be uint8_t but for more general approach are bigger
+{
+    double pok = 1.0 / N;//probability of occurrence of each posible element in key, ie, P(j_i = v)
+    double kop = 1 - pok;
+    int t;
+    double pstuv;//P_t[u]=v
+
+    if(u < v)
+    {
+        t = v+1;
+        pstuv = pok*(pow(kop,v-u) + pow(kop,v) );
+    }
+    else
+    {
+        return pok*(pow(kop,N-u-1) + pow(kop,v+1) - pow(kop,N-u+v));
+    }
+
+    
+
+    return pstuv*pow(kop, N - t) + (1-pstuv)*pok*pow(kop,v)*(1-pow(kop,N - t));
+}
 
 /**
  * @brief Calculates the probability of v to end in position u after the end of RC4's KSA, suing
@@ -300,6 +356,20 @@ float ProbAfterRC4sKSA_SARKAR(int u, int v, int N=256)//u,v can be uint8_t but f
     }
 }
 
+float ProbAfterRC4sKSA_SARKAR2(int u, int v, int N=256)//u,v can be uint8_t but for more general approach are bigger
+{
+    double pok = 1.0 / N;//probability of occurrence of each posible element in key, ie, P(j_i = v)
+    double kop = 1 - pok;
+
+    if(u < v)//in one paper shows <= but seems te be wrong
+    {
+        return pok*(pow(kop,N - 1 - u) + pow(kop,v));
+    }
+    else
+    {
+        return pok*(pow(kop,N-u-1) + pow(kop,v) - pow(kop,N-u+v));//varies in some papers of Sarkar
+    }
+}
 
 /**
  * @brief Get the Probabilities after KSA, based on theoretical formulae
@@ -313,6 +383,22 @@ void GetRealProbabilitiesRC4afterKSA(float occurrenceProbability[256][256])
         for (int ii = 0; ii < 256; ii++)
         {
             occurrenceProbability[i][ii] = ProbAfterRC4sKSA(i,ii);
+        }
+    }
+}
+
+/**
+ * @brief Get the Probabilities after KSA, based on theoretical formulae
+ * 
+ * @param occurrenceProbability 
+ */
+void GetRealProbabilitiesRC4afterKSA2(float occurrenceProbability[256][256])
+{
+    for (int i = 0; i < 256; i++)
+    {
+        for (int ii = 0; ii < 256; ii++)
+        {
+            occurrenceProbability[i][ii] = ProbAfterRC4sKSA2(i,ii);
         }
     }
 }
@@ -334,6 +420,21 @@ void GetRealProbabilitiesRC4afterKSA_SARKAR(float occurrenceProbability[256][256
     }
 }
 
+/**
+ * @brief Get the Probabilities after KSA, based on theoretical formulae by Sarkar and using matrix of transition probabilities 
+ * 
+ * @param occurrenceProbability 
+ */
+void GetRealProbabilitiesRC4afterKSA_SARKAR2(float occurrenceProbability[256][256])
+{
+    for (int i = 0; i < 256; i++)
+    {
+        for (int ii = 0; ii < 256; ii++)
+        {
+            occurrenceProbability[i][ii] = ProbAfterRC4sKSA_SARKAR2(i,ii);
+        }
+    }
+}
 /**
  * @brief Calculate the mean square error in a set of calues(points)
  * 

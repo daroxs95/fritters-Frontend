@@ -13,6 +13,7 @@
 #include <SDL2/SDL.h>
 #include <fritters/RC4.h>
 #include <spdlog/spdlog.h>
+#include <sol/sol.hpp>
 
 #include "../random_password.h"
 #include "../crypto.h"
@@ -24,8 +25,7 @@
 
 #include "About.h"
 #include "Help.h"
-
-#include <sol/sol.hpp>
+#include "RC4analyticsConfig.h"
 
 
 void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              //RC4 multicipher from file
@@ -38,17 +38,24 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static bool calcBase  = true;
             static bool calcFromFile = true;
 
+            //windows
             static bool showAbout = false, showHelp = false;
+            //config
 
+            static Config config;
 
             static std::ifstream passwords_file;
             static bool calculating = false;
             static int passwordsNumber = 0;                   
             static int passwordsNumberFile = 0;                   
             static float theoricProbabilities[256][256];          //calculated by theoretical formulae
+            static float theoricProbabilities2[256][256];          //calculated by theoretical formulae
             static float theoricProbabilitiesSarkar[256][256];   //calculated by theoretical formulae by Sarkar
+            static float theoricProbabilitiesSarkar2[256][256];   //calculated by theoretical formulae by Sarkar
             static long double mseBase[256];                                   //mean square error of base theoretical probability
+            static long double mseBase2[256];                                 //mean square error of Sarkar theoretical probability
             static long double mseSarkar[256];                                 //mean square error of Sarkar theoretical probability
+            static long double mseSarkar2[256];                                 //mean square error of Sarkar theoretical probability
             static int positions[] = {0};                                       //position to get probability at, for each histogram showed, size is of max histograms
             static char pathToPasswordsFile[ImGuiFs::MAX_PATH_BYTES] = "passwords.txt";
             
@@ -62,9 +69,6 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
             static std::vector<jArrayStruct>        jArrays;
             static std::vector<jArrayStruct>        jArraysPRGA;
-            static const int                        maxNumJArrays = 10000; 
-
-
 
 
             //PRGA RELATED
@@ -81,11 +85,16 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             static bool inited = false;
             if (!inited)
             {
-                jArraysPRGA.resize(maxNumJArrays);
+                jArraysPRGA.resize(config.maxNumJArrays);
                 
                 //Binding ImGui to Lua state and loading main.lua
                 lua.open_libraries(sol::lib::base);
                 bindImGui2sol2(lua);
+                bindCryptoExperimentsStructs2sol2(lua);
+                bindConfigStructs2sol2(lua);
+                lua["data"]     = &practiceProbabilities;
+                lua["config"]   = &config;
+
                 mainScript = lua.load_file("main.lua");
                 if (!mainScript.valid()) 
                 {
@@ -93,7 +102,19 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     logger.warn("Failed to load main.lua: {}", err.what() );
                 }
                 else mainScriptCorrect = true;
-                
+
+                //apply configurations from lua
+                auto configScript = lua.load_file("config.lua");
+                if (!configScript.valid()) 
+                {
+                    sol::error err = mainScript;
+                    logger.warn("Failed to load config.lua: {}", err.what() );
+                }
+                else 
+                {
+                    configScript();
+                    logger.info("Successfully applied configurations from config.lua");
+                }
 
                 logger.info("jarray max size = {}", jArrays.max_size());
 
@@ -126,7 +147,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                         //need to store small number of jArrays, couse each struct is like 2kb and the ram gets eaten really fast,
                         // and eventually the app could crash, ie for 2*10^6 keys 
-                        if(jArrays.size() < maxNumJArrays)
+                        if(jArrays.size() < config.maxNumJArrays)
                         {
                             jArrays.resize(jArrays.size() + 1);
 
@@ -186,10 +207,15 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 {
                     ImGui::MenuItem("Shows calcs by Goutam Paul,Subhamoy Maitra, Rohit Srivastava", NULL, &calcBase);
                     ImGui::MenuItem("Shows calcs by Sarkar/Mantin formulae",                        NULL, &calcSarkar);
-                    for (auto item : practiceProbabilities)
+                    for (auto &item : practiceProbabilities)
                     {
                         ImGui::MenuItem(item.id,NULL, &item.isActive );//TODO: isActive not passing as pointer(can not be changed in the app)
-                    }
+                    }/*
+                    for (size_t i = 0; i < practiceProbabilities.size(); i++)
+                    {
+                        ImGui::MenuItem(practiceProbabilities[i].id,NULL, &practiceProbabilities[i].isActive );//TODO: isActive not passing as pointer(can not be changed in the app)
+                    }*/
+                    
                     ImGui::EndMenu();
                 }
                 if (ImGui::BeginMenu("Tools"))
@@ -269,14 +295,11 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             //ImGui::PushItemWidth(ImGui::GetFontSize() * -13);
             ImGui::InputInt("Number of passwords to generate ",&passwordsNumber);
 
-            //run lua test script, TODO improve error check
-            if(mainScriptCorrect) mainScript();
 
             if(!calculating)
             {   
                 if (ImGui::Button("Calculate"))
                 {   
-                    //spdlog::info("Calculating!");
                     logger.info("Calculating!");
 
                     calculating = true;
@@ -322,8 +345,20 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.resize(outputBytesNumberPRGA);
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.clear();
                             practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.resize(outputBytesNumberPRGA);
+                            practiceProbabilities[j].experimentsNumber = 0;
+
                             if(practiceProbabilities[j].jArrays4eachPass) 
-                                (*practiceProbabilities[j].jArrays4eachPass).resize(maxNumJArrays);
+                                (*practiceProbabilities[j].jArrays4eachPass).resize(config.maxNumJArrays);
+
+                            for (size_t ii = 0; ii < practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.size(); ii++)
+                            {
+                                practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[ii].experimentsNumber    = 0;  
+                            }
+                            for (size_t ii = 0; ii < practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.size(); ii++)
+                            {
+                                practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[ii].experimentsNumber    = 0;  
+                            }
+
 
                             for (size_t i = 0 ; i < passwordsNumber; i++)
                             {
@@ -346,7 +381,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                         else return nullptr;
                                     }()
                                 );
-
+                                practiceProbabilities[j].experimentsNumber++;//this is here for future improvements to be smooth
                             }
                                
                             for (int i = 0; i < 256; i++)
@@ -355,7 +390,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                     practiceProbabilities[j].realOccurrenceProbability[i], 
                                     practiceProbabilities[j].occurrenceProbability[i],
                                     256,
-                                    passwordsNumber
+                                    practiceProbabilities[j].experimentsNumber
                                 );
                             }
 
@@ -365,33 +400,41 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                     practiceProbabilities[j].PRGAoutputsProbabilities[i].realOcurrences,
                                     practiceProbabilities[j].PRGAoutputsProbabilities[i].occurrenceProbability,
                                     256,
-                                    passwordsNumber
+                                    practiceProbabilities[j].PRGAoutputsProbabilities[i].experimentsNumber
                                 );
                                 arrayOccurrences2probabilities(
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].realOcurrences,
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].occurrenceProbability,
                                     256,
-                                    passwordsNumber
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].experimentsNumber
                                 );
                                 arrayOccurrences2probabilities(
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].realOcurrences,
                                     practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].occurrenceProbability,
                                     256,
-                                    passwordsNumber
+                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].experimentsNumber
                                 );
                             }
                             
                         }
                         
                         GetRealProbabilitiesRC4afterKSA(theoricProbabilities);
+                        GetRealProbabilitiesRC4afterKSA2(theoricProbabilities2);
                         GetRealProbabilitiesRC4afterKSA_SARKAR(theoricProbabilitiesSarkar);
+                        GetRealProbabilitiesRC4afterKSA_SARKAR2(theoricProbabilitiesSarkar2);
+
                         for (short i = 0; i < 256; i++)
                         {
                             mseBase[i] = calcMSE(theoricProbabilities[i],practiceProbabilities[0].occurrenceProbability[i],256);
+                            mseBase2[i] = calcMSE(theoricProbabilities2[i],practiceProbabilities[0].occurrenceProbability[i],256);
                             mseSarkar[i] = calcMSE(theoricProbabilitiesSarkar[i],practiceProbabilities[0].occurrenceProbability[i],256);
+                            mseSarkar2[i] = calcMSE(theoricProbabilitiesSarkar2[i],practiceProbabilities[0].occurrenceProbability[i],256);
                         }
                         
                         calculating = false;
+                        logger.info("DONE Calculating!");
+                        
+
                         
                         /*
                         temp
@@ -411,10 +454,12 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             {
                 ImGui::Text("Calculating");
             }
-            
+
+
             if(ImGui::CollapsingHeader("Probability of State Array's possible values(bytes) to be in position u in S(State Array) after KSA"))
             {
                 //ImGui::PushItemWidth(ImGui::GetFontSize() * -1);// Use fixed width for labels (by passing a negative value), the rest goes to widgets. We choose a width proportional to our font size.
+                ImGui::PushID("KSA");
 
                 for (int i = 0; i < IM_ARRAYSIZE(positions); i++)
                 {
@@ -494,7 +539,22 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(theoricProbabilities[positions[i]],256), 
                                                 ImVec2(0,80)
                                             );
-                            ImGui::Text( "Mean Square Error = %e", mseBase[positions[i]] );
+
+                            ImGui::Text( "Mean Square Error = %Le", mseBase[positions[i]] );
+                        }
+                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u NEW"))
+                        {
+                            ImGui::PlotHistogram("", 
+                                                theoricProbabilities2[positions[i]], 
+                                                IM_ARRAYSIZE(theoricProbabilities2[positions[i]]), 
+                                                0, 
+                                                NULL, 
+                                                0.001f, 
+                                                get_max(theoricProbabilities2[positions[i]],256), 
+                                                ImVec2(0,80)
+                                            );
+                            ImGui::Text( "Mean Square Error = %Le", mseBase2[positions[i]] );
+
                         }
                     }
 
@@ -511,7 +571,21 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(theoricProbabilitiesSarkar[positions[i]],256), 
                                                 ImVec2(0,80)
                                             );
-                            ImGui::Text("Mean Square Error = %e", mseSarkar[positions[i]]);
+                            ImGui::Text("Mean Square Error = %Le", mseSarkar[positions[i]]);
+                        }
+                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u, using Sarkar formulae 2"))
+                        {
+                            ImGui::PlotHistogram("", 
+                                                theoricProbabilitiesSarkar2[positions[i]], 
+                                                IM_ARRAYSIZE(theoricProbabilitiesSarkar2[positions[i]]), 
+                                                0, 
+                                                NULL, 
+                                                0.001f, 
+                                                get_max(theoricProbabilitiesSarkar2[positions[i]],256), 
+                                                ImVec2(0,80)
+                                            );
+                            ImGui::Text("Mean Square Error = %Le", mseSarkar2[positions[i]]);
+
                         }
                     }
 
@@ -533,16 +607,21 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         ImGui::BeginPopupModal("Fullscreen",NULL, ImGuiWindowFlags_NoTitleBar);//render the widget in a modal
                     }
                     ImPlot::SetNextPlotLimits(0,256,0,0.008);
-                    if (ImPlot::BeginPlot("Positions against its probability to end at position u(ie P(S[u]=x)","x","P(S[u]=x)") ) 
+                    if (ImPlot::BeginPlot("Positions versus its probability to end at position u(ie P(S[u]=x)",
+                                            "x",
+                                            "P(S[u]=x)",
+                                            ImVec2(-1,config.plotHeight)
+                                            ) 
+                        ) 
                     {
 
                         ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
                         
                         
-                        if(calcPracticeAllKeys)
-                        {           
-                            for (size_t j = 0; j < practiceProbabilities.size(); j++)
-                            {
+                        for (size_t j = 0; j < practiceProbabilities.size(); j++)
+                        {
+                            if(practiceProbabilities[j].isActive)
+                            {           
                                 ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256, 0);
                                 ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
                             }
@@ -552,12 +631,19 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         {
                             ImPlot::PlotShaded("Probabilities after KSA theoretically", theoricProbabilities[positions[i]], 256, 0);
                             ImPlot::PlotLine("Probabilities after KSA theoretically", theoricProbabilities[positions[i]], 256);
+
+                            ImPlot::PlotShaded("Probabilities after KSA theoretically NEW", theoricProbabilities2[positions[i]], 256, 0);
+                            ImPlot::PlotLine("Probabilities after KSA theoretically NEW", theoricProbabilities2[positions[i]], 256);
                         }
 
                         if(calcSarkar)
                         {
                             ImPlot::PlotShaded("Probabilities after KSA theoretically by Sarkar formulae", theoricProbabilitiesSarkar[positions[i]], 256, 0);
                             ImPlot::PlotLine("Probabilities after KSA theoretically by Sarkar formulae", theoricProbabilitiesSarkar[positions[i]], 256);
+                            
+                            ImPlot::PlotShaded("Probabilities after KSA theoretically by Sarkar formulae 2", theoricProbabilitiesSarkar2[positions[i]], 256, 0);
+                            ImPlot::PlotLine("Probabilities after KSA theoretically by Sarkar formulae 2", theoricProbabilitiesSarkar2[positions[i]], 256);
+
                             ImPlot::PopStyleVar();
                         }
 
@@ -638,6 +724,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     ImGui::PopItemWidth();
                     
                 }
+                ImGui::PopID();
             }
 
             if(ImGui::CollapsingHeader("Probability of some Ks(outputs of PRGA) to be each possible byte"))
@@ -669,6 +756,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(practiceProbabilities[ii].PRGAoutputsProbabilities[Kvalue].occurrenceProbability,256), 
                                                 ImVec2(0,80)
                                             );
+                            ImGui::Text(" Number of experiments %d ",practiceProbabilities[ii].PRGAoutputsProbabilities[Kvalue].experimentsNumber);
+
                             ImGui::Text(" Using keys generating S[1] = 0 (state array after KSA)  ");
                             ImGui::PlotHistogram("", 
                                                 practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].occurrenceProbability, 
@@ -679,6 +768,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].occurrenceProbability,256), 
                                                 ImVec2(0,80)
                                             );
+                            ImGui::Text(" Number of experiments %d ",practiceProbabilities[ii].PRGAoutputsProbabilitiesS1eq0[Kvalue].experimentsNumber);
+
                             ImGui::Text(" Using keys generating S[1] != 0 (state array after KSA)  ");
 
                             ImGui::PlotHistogram("", 
@@ -690,6 +781,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                                 get_max(practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].occurrenceProbability,256), 
                                                 ImVec2(0,80)
                                             );
+                            ImGui::Text(" Number of experiments %d ",practiceProbabilities[ii].PRGAoutputsProbabilitiesS1neq0[Kvalue].experimentsNumber);
 
                             if(practiceProbabilities[ii].jArrays4eachPass)
                             {
@@ -725,22 +817,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
             }
 
 
-            //table TODO if in mood
-            /*if (ImGui::CollapsingHeader("Window options"))
-            {
-                if (ImGui::BeginTable("split", 256))
-                {
-                    for (short i = 0; i < 256; i++)
-                    {
-                        ImGui::TableNextColumn();
-                        for (short ii = 0; ii < 256; ii++)
-                        {
-                            ImGui::Text("%f", occurrenceProbability[i][ii]);
-                        }
-                    }
-                    ImGui::EndTable();
-                }
-            }*/
+            //run lua test script, TODO improve error check
+            if(mainScriptCorrect) mainScript();
             
 
             ImGui::End();//vanilla

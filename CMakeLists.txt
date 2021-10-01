@@ -158,6 +158,7 @@ set (RequiredExtras
     "assets/imgui.ini"
     "3rdParty/imgui/fonts/Roboto-Medium.ttf"
     "scripts/lua/main.lua"
+    "scripts/lua/config.lua"
 )
 get_target_property(BINARY_EXECUTABLE_OUTPUT frittersFrontend RUNTIME_OUTPUT_DIRECTORY)
 foreach (_file ${RequiredExtras})
