@@ -61,12 +61,17 @@ jobs:
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: cmake --build build --target test  
 
+    - uses: papeloto/action-zip@v1
+      with:
+        files: tempApp/
+        dest: LinuxGTKx64.zip
+
     - name: Package App
       uses: actions/upload-artifact@v2
       with:
         name: App (LinuxGTK x64)
         path: |
-          tempApp/
+          LinuxGTKx64.zip
 
     #this throws error to decompress after download in windows
     #- name: Package Collections
@@ -125,9 +130,14 @@ jobs:
     #   # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
     #   run: cmake --build build --target test
 
+    - uses: papeloto/action-zip@v1
+      with:
+        files: tempApp/
+        dest: Windowsx64.zip
+
     - name: Package App
       uses: actions/upload-artifact@v2
       with:
         name: App (Windows x64)
         path: |
-          tempApp/
+          Windowsx64.zip
