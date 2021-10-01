@@ -653,12 +653,10 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     
                     if (showPlotFullscreen)
                     {
-
-                        if(ImGui::Button("Save image"))
-                        {
                             ImVec2 temp                     = ImGui::GetItemRectSize();
                             ImVec2 winOffset2Widget         = ImGui::GetStyle().WindowPadding; //this is global, like any other imgui setting, find something else local if posible
-
+                        if(ImGui::Button("Save image"))
+                        {
                             /*
                             SDL_Renderer *r_copie=SDL_GetRenderer(window);
                             SDL_Surface *sshot = SDL_CreateRGBSurface(0, 800, 800, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
