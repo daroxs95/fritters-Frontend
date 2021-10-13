@@ -58,15 +58,17 @@ set(IMGUI_BASIC_SOURCES "3rdParty/imgui/imgui/imgui.cpp"
 #filling dearimgui rendering backend necessary files
 set(IMGUI_RENDERING_BACKEND_SOURCES "3rdParty/imgui/imgui/imgui_impl_sdl.cpp"
                         "3rdParty/imgui/imgui/imgui_impl_opengl3.cpp"
-                        "3rdParty/imgui/imgui/imgui_tables.cpp"#optional i think
-                        "3rdParty/imgui/imgui/imgui_widgets.cpp"
                         )
 
 
 
 
 add_executable(frittersFrontend
+            "src/data_types/RC4experimentClass.cpp"
+            "src/data_types/common.cpp"
+            "src/crypto.cpp"
             "src/main.cpp"
+
             ${IMGUI_BASIC_SOURCES}
             ${IMGUI_RENDERING_BACKEND_SOURCES}
             ${NFD_SOURCES}                                                  #optional for native file dialog
@@ -159,6 +161,7 @@ set (RequiredExtras
     "3rdParty/imgui/fonts/Roboto-Medium.ttf"
     "scripts/lua/main.lua"
     "scripts/lua/config.lua"
+    "scripts/lua/formulae.lua"
 )
 get_target_property(BINARY_EXECUTABLE_OUTPUT frittersFrontend RUNTIME_OUTPUT_DIRECTORY)
 foreach (_file ${RequiredExtras})

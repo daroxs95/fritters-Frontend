@@ -17,7 +17,7 @@ bool mCollapsingHeader(const char* label, bool* p_visible, ImGuiTreeNodeFlags fl
     return ImGui::CollapsingHeader(label,p_visible,flags);
 }
 
-bool mCollapsingHeaderSimple(const char* label, ImGuiTreeNodeFlags flags)
+bool mCollapsingHeaderSimple(const char* label, ImGuiTreeNodeFlags flags = 0)
 {
     return ImGui::CollapsingHeader(label, flags);
 }
@@ -74,6 +74,7 @@ int bindCryptoExperimentsStructs2sol2( sol::state &lua )
     RC4calcInstanceInPractice_type["experimentsNumber"]                     = &RC4calcInstanceInPractice::experimentsNumber;
     RC4calcInstanceInPractice_type["getOccurrenceProbability"]              = &RC4calcInstanceInPractice::getOccurrenceProbability;
     RC4calcInstanceInPractice_type["isActive"]                              = &RC4calcInstanceInPractice::isActive;
+    RC4calcInstanceInPractice_type["PRGAoutputsProbabilities"]                              = &RC4calcInstanceInPractice::PRGAoutputsProbabilities;
 
 
     return 0;

@@ -13,6 +13,7 @@
 #include <SDL2/SDL.h>
 #include <fritters/RC4.h>
 #include <spdlog/spdlog.h>
+#define SOL_ALL_SAFETIES_ON 1
 #include <sol/sol.hpp>
 
 #include "../random_password.h"
@@ -20,6 +21,10 @@
 #include "../imgui_helpers.h"
 #include "../lua_binders.h"
 #include "../gl_helpers.h"
+#include "../data_types/common.h"
+#include "../data_types/RC4experimentClass.h"
+
+//#include "../sol2asserts.h" //not used, error 
 #include <easy_imgui/spdlog_helper.h>
 
 
@@ -64,7 +69,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
  
             static std::vector<RC4calcInstanceInPractice> practiceProbabilities;//cant decide if is better this way or as above
-            practiceProbabilities.resize(7);
+            //practiceProbabilities.resize(7);
 
 
             static std::vector<jArrayStruct>        jArrays;
@@ -72,9 +77,8 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
 
             //PRGA RELATED
-            static int outputBytesNumberPRGA = 50;
             static bool link2KSAkeys = true; //not in use, but will be
-
+            static int outputBytesNumberPRGA = 50;
 
             //Lua State
             static sol::state lua;
@@ -88,12 +92,14 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 jArraysPRGA.resize(config.maxNumJArrays);
                 
                 //Binding ImGui to Lua state and loading main.lua
-                lua.open_libraries(sol::lib::base);
+                lua.open_libraries(sol::lib::base, sol::lib::package);
                 bindImGui2sol2(lua);
                 bindCryptoExperimentsStructs2sol2(lua);
                 bindConfigStructs2sol2(lua);
                 lua["data"]     = &practiceProbabilities;
                 lua["config"]   = &config;
+                //std::string x = lua["package"]["path"];
+                //lua["package"]["path"] = x + ";E:/coding/Projects/mine/fritters-Frontend/build/winbugs/bin/?.lua";
 
                 mainScript = lua.load_file("main.lua");
                 if (!mainScript.valid()) 
@@ -101,7 +107,12 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                     sol::error err = mainScript;
                     logger.warn("Failed to load main.lua: {}", err.what() );
                 }
-                else mainScriptCorrect = true;
+                else 
+                {
+                    logger.info("Successfully loaded main.lua");
+                    mainScriptCorrect = true;
+                }
+
 
                 //apply configurations from lua
                 auto configScript = lua.load_file("config.lua");
@@ -112,35 +123,37 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 }
                 else 
                 {
-                    configScript();
-                    logger.info("Successfully applied configurations from config.lua");
+                    logger.info("Successfully loaded config.lua");
+                    if (!configScript().valid())
+                    {
+                        logger.error("Error executing config.lua");
+                    } 
+                    else logger.info("Successfully applied configurations from config.lua");
                 }
 
                 logger.info("jarray max size = {}", jArrays.max_size());
 
                 //Adding initial test to do in `practiceProbabilities`
                 {
-                    strcpy(practiceProbabilities[0].id, "Uniformly distributed keys, fully random chars/digits");
-                    practiceProbabilities[0].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Uniformly distributed keys, fully random chars/digits",[]()->std::string{
                         return getRandomString(32);
-                    };
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
-                    strcpy(practiceProbabilities[1].id, "Custom distributed keys, {1,0}");
-                    practiceProbabilities[1].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Custom distributed keys, {1,0}",[]()->std::string{
                         return getRandomStringCustomDistribution(2);
-                    };
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
-
-                    strcpy(practiceProbabilities[2].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32");
-                    practiceProbabilities[2].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32",[]()->std::string{
                         int size = rand()%29 + 3;
                         if (size % 2 != 0) size++;
                         
                         return getRandomStringCustomDistribution(size);
-                    };
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
-                    strcpy(practiceProbabilities[3].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}, jarray fill, variable and even keylength, 2 <= keylength <= 32");
-                    practiceProbabilities[3].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...}, jarray fill, variable and even keylength, 2 <= keylength <= 32",[]()->std::string{
                         int size = rand()%30 + 2;
                         if (size % 2 != 0) size++;
                         std::string a = getRandomStringCustomDistribution(size);
@@ -164,26 +177,34 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         }
                         
                         return a;
-                    };
-                    practiceProbabilities[3].jArrays4eachPass = new std::vector<jArrayStruct>;
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
 
-                    strcpy(practiceProbabilities[4].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6");
-                    practiceProbabilities[4].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 6",[]()->std::string{
                         return getRandomStringCustomDistribution(6);
-                    };
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
-                    strcpy(practiceProbabilities[5].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 8");
-                    practiceProbabilities[5].getPassword = []()->std::string{
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice( "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 8",[]()->std::string{
                         return getRandomStringCustomDistribution(8);
-                    };
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
-                    strcpy(practiceProbabilities[6].id, "Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 256");
-                    practiceProbabilities[6].getPassword = []()->std::string{
+
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} fixed and even keylength, keylength = 256",[]()->std::string{
                         return getRandomStringCustomDistribution(256);
-                    };
-                    practiceProbabilities[6].jArrays4eachPass = new std::vector<jArrayStruct>;
+                    }));
+                    practiceProbabilities.back().jArrays4eachPass = new std::vector<jArrayStruct>(config.maxNumJArrays);
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstream;
 
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("P S[S[u]]=x Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32",[]()->std::string{
+                        int size = rand()%29 + 3;
+                        if (size % 2 != 0) size++;
+                        
+                        return getRandomStringCustomDistribution(size);
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstreamSSX;
                 }
 
 
@@ -336,86 +357,10 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         if (passwordsNumber == 0) passwordsNumber = 500000;
                         
 
-                        for (size_t j = 0; j < practiceProbabilities.size(); j++) //with for(auto i:practiceProbabilities ) not working 
+                        for (auto &experiment : practiceProbabilities) //with for(auto i:practiceProbabilities ) not working 
                         {
-                            InitArrayTo(practiceProbabilities[j].realOccurrenceProbability,(long double)0);
-                            practiceProbabilities[j].PRGAoutputsProbabilities.clear();
-                            practiceProbabilities[j].PRGAoutputsProbabilities.resize(outputBytesNumberPRGA);
-                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.clear();
-                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.resize(outputBytesNumberPRGA);
-                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.clear();
-                            practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.resize(outputBytesNumberPRGA);
-                            practiceProbabilities[j].experimentsNumber = 0;
-
-                            if(practiceProbabilities[j].jArrays4eachPass) 
-                                (*practiceProbabilities[j].jArrays4eachPass).resize(config.maxNumJArrays);
-
-                            for (size_t ii = 0; ii < practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0.size(); ii++)
-                            {
-                                practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[ii].experimentsNumber    = 0;  
-                            }
-                            for (size_t ii = 0; ii < practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0.size(); ii++)
-                            {
-                                practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[ii].experimentsNumber    = 0;  
-                            }
-
-
-                            for (size_t i = 0 ; i < passwordsNumber; i++)
-                            {
-                                FillOcurrencesAfterKSAreturnPRGAstream(
-                                    practiceProbabilities[j].realOccurrenceProbability,
-                                    practiceProbabilities[j].PRGAoutputsProbabilities,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0,
-                                    practiceProbabilities[j].getPassword(),
-                                    outputBytesNumberPRGA,
-                                    [&]()->jArrayStruct*
-                                    {
-                                        if (practiceProbabilities[j].jArrays4eachPass 
-                                                &&
-                                                (*practiceProbabilities[j].jArrays4eachPass).size() > i
-                                            ) 
-                                            {
-                                                return &(*practiceProbabilities[j].jArrays4eachPass)[i];
-                                            }
-                                        else return nullptr;
-                                    }()
-                                );
-                                practiceProbabilities[j].experimentsNumber++;//this is here for future improvements to be smooth
-                            }
-                               
-                            for (int i = 0; i < 256; i++)
-                            {
-                                arrayOccurrences2probabilities(
-                                    practiceProbabilities[j].realOccurrenceProbability[i], 
-                                    practiceProbabilities[j].occurrenceProbability[i],
-                                    256,
-                                    practiceProbabilities[j].experimentsNumber
-                                );
-                            }
-
-                            for( int i = 0 ; i < practiceProbabilities[j].PRGAoutputsProbabilities.size(); i++)
-                            {
-                                arrayOccurrences2probabilities(
-                                    practiceProbabilities[j].PRGAoutputsProbabilities[i].realOcurrences,
-                                    practiceProbabilities[j].PRGAoutputsProbabilities[i].occurrenceProbability,
-                                    256,
-                                    practiceProbabilities[j].PRGAoutputsProbabilities[i].experimentsNumber
-                                );
-                                arrayOccurrences2probabilities(
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].realOcurrences,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].occurrenceProbability,
-                                    256,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1eq0[i].experimentsNumber
-                                );
-                                arrayOccurrences2probabilities(
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].realOcurrences,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].occurrenceProbability,
-                                    256,
-                                    practiceProbabilities[j].PRGAoutputsProbabilitiesS1neq0[i].experimentsNumber
-                                );
-                            }
-                            
+                            experiment.outputBytesNumberPRGA = outputBytesNumberPRGA;
+                            experiment.runExperiment(passwordsNumber);
                         }
                         
                         GetRealProbabilitiesRC4afterKSA(theoricProbabilities);
@@ -528,7 +473,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                     if(calcBase)
                     {
-                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u"))
+                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u OLD"))
                         {
                             ImGui::PlotHistogram("", 
                                                 theoricProbabilities[positions[i]], 
@@ -542,7 +487,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                             ImGui::Text( "Mean Square Error = %Le", mseBase[positions[i]] );
                         }
-                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u NEW"))
+                        if(ImGui::CollapsingHeader("Theorical probability of each value to be at position u"))
                         {
                             ImGui::PlotHistogram("", 
                                                 theoricProbabilities2[positions[i]], 
@@ -607,6 +552,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         ImGui::BeginPopupModal("Fullscreen",NULL, ImGuiWindowFlags_NoTitleBar);//render the widget in a modal
                     }
                     ImPlot::SetNextPlotLimits(0,256,0,0.008);
+
                     if (ImPlot::BeginPlot("Positions versus its probability to end at position u(ie P(S[u]=x)",
                                             "x",
                                             "P(S[u]=x)",
@@ -614,26 +560,16 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                                             ) 
                         ) 
                     {
-
                         ImPlot::PushStyleVar(ImPlotStyleVar_FillAlpha, 0.25f);
                         
-                        
-                        for (size_t j = 0; j < practiceProbabilities.size(); j++)
-                        {
-                            if(practiceProbabilities[j].isActive)
-                            {           
-                                ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256, 0);
-                                ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
-                            }
-                        }
 
                         if(calcBase)
                         {
-                            ImPlot::PlotShaded("Probabilities after KSA theoretically", theoricProbabilities[positions[i]], 256, 0);
-                            ImPlot::PlotLine("Probabilities after KSA theoretically", theoricProbabilities[positions[i]], 256);
+                            //ImPlot::PlotShaded("Probabilities after KSA theoretically OLD", theoricProbabilities[positions[i]], 256, 0);
+                            //ImPlot::PlotLine("Probabilities after KSA theoretically OLD", theoricProbabilities[positions[i]], 256);
 
-                            ImPlot::PlotShaded("Probabilities after KSA theoretically NEW", theoricProbabilities2[positions[i]], 256, 0);
-                            ImPlot::PlotLine("Probabilities after KSA theoretically NEW", theoricProbabilities2[positions[i]], 256);
+                            ImPlot::PlotShaded("Probabilities after KSA theoretically", theoricProbabilities2[positions[i]], 256, 0);
+                            ImPlot::PlotLine("Probabilities after KSA theoretically", theoricProbabilities2[positions[i]], 256);
                         }
 
                         if(calcSarkar)
@@ -647,6 +583,14 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                             ImPlot::PopStyleVar();
                         }
 
+                        for (size_t j = 0; j < practiceProbabilities.size(); j++)
+                        {
+                            if(practiceProbabilities[j].isActive)
+                            {           
+                                ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256, 0);
+                                ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
+                            }
+                        }
 
                         ImPlot::EndPlot();
                     }
@@ -816,7 +760,19 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
 
             //run lua test script, TODO improve error check
-            if(mainScriptCorrect) mainScript();
+            static sol::protected_function_result mainScriptResult;
+            if(mainScriptCorrect)
+            {
+                mainScriptResult = mainScript();
+                if (!mainScriptResult.valid())
+                {
+                    mainScriptCorrect = false;
+                    logger.error("Error executing main script.");
+                    //
+                } 
+                /*std::cerr << "Assertion `" #condition "` failed in " << __FILE__ \
+                      << " line " << __LINE__ << std::endl;*/
+            } 
             
 
             ImGui::End();//vanilla

@@ -28,4 +28,5 @@
 -think in change structs for classes, in terms of speed should be the same exept virtual functions calls and similar
 -instead of wrapp ImGui::Button try to add a ImVec type to lua and check if uses default values when calling ImGui::Button
 -set a config struct to load and edit with lua at start, instead of a classic .ini file, lua script can do some things, bad idea any way i still need an .ini like, to save config from app 
--make data exportable in tabular form, maybe latex ready, all in lua should be fast to implement
+-make experiment data exportable in tabular form, maybe latex ready, all in lua should be fast to implement
+-implement meaningful error mensages about errors in lua
