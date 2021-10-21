@@ -118,7 +118,7 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 auto configScript = lua.load_file("config.lua");
                 if (!configScript.valid()) 
                 {
-                    sol::error err = mainScript;
+                    sol::error err = configScript;
                     logger.warn("Failed to load config.lua: {}", err.what() );
                 }
                 else 
@@ -205,6 +205,23 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         return getRandomStringCustomDistribution(size);
                     }));
                     practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstreamSSX;
+
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("P S[S[u]]=x when S[1]!=0 Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32",[]()->std::string{
+                        int size = rand()%29 + 3;
+                        if (size % 2 != 0) size++;
+                        
+                        return getRandomStringCustomDistribution(size);
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstreamSSXS1neq0;
+
+                    practiceProbabilities.push_back(RC4calcInstanceInPractice("P S[u]=x when S[1]!=0 Custom distributed keys, {1,0,ODD,EVEN,ODD,EVEN...} variable and even keylength, 3 <= keylength <= 32",[]()->std::string{
+                        int size = rand()%29 + 3;
+                        if (size % 2 != 0) size++;
+                        
+                        return getRandomStringCustomDistribution(size);
+                    }));
+                    practiceProbabilities.back().fillOcurrencesAfterKSAreturnPRGAstream = FillOcurrencesAfterKSAreturnPRGAstreamS1neq0;
+                
                 }
 
 

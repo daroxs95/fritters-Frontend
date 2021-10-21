@@ -15,6 +15,8 @@
 
 int FillOcurrencesAfterKSAreturnPRGAstream( RC4calcInstanceInPractice& experimentInstance);
 int FillOcurrencesAfterKSAreturnPRGAstreamSSX( RC4calcInstanceInPractice& experimentInstance);
+int FillOcurrencesAfterKSAreturnPRGAstreamSSXS1neq0( RC4calcInstanceInPractice& experimentInstance);
+int FillOcurrencesAfterKSAreturnPRGAstreamS1neq0( RC4calcInstanceInPractice& experimentInstance);
 
 
 

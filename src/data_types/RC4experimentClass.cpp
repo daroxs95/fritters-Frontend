@@ -50,7 +50,6 @@ void RC4calcInstanceInPractice::runExperiment(const int &passwordsNumber)
     for (size_t i = 0 ; i < passwordsNumber; i++)
     {
         fillOcurrencesAfterKSAreturnPRGAstream(*this);
-        experimentsNumber++;
     }  
     for (int i = 0; i < 256; i++)
     {

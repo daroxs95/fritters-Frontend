@@ -156,6 +156,7 @@ int FillOcurrencesAfterKSAreturnPRGAstream( RC4calcInstanceInPractice& experimen
     {
         experimentInstance.realOccurrenceProbability[i][temp_state_array[i]]++;
     }
+    experimentInstance.experimentsNumber++;
     
 
     for (size_t ii = 0; ii < experimentInstance.PRGAoutputsProbabilities.size() ; ii++)
@@ -204,6 +205,112 @@ int FillOcurrencesAfterKSAreturnPRGAstreamSSX( RC4calcInstanceInPractice& experi
     for (size_t i = 0; i < 256; i++)
     {
         experimentInstance.realOccurrenceProbability[i][ temp_state_array[temp_state_array[i] ] ]++;
+    }
+    experimentInstance.experimentsNumber++;
+
+    for (size_t ii = 0; ii < experimentInstance.PRGAoutputsProbabilities.size() ; ii++)
+    {
+        uint8_t retrievedJindexValue = cipher.getJindex();
+        uint8_t k = cipher.getKeystreamValueDEBUG();
+
+
+
+        if(temp_state_array[1] == 0 && ii < experimentInstance.PRGAoutputsProbabilitiesS1eq0.size() ) 
+        {
+            experimentInstance.PRGAoutputsProbabilitiesS1eq0[ii].realOcurrences[k]++;
+            experimentInstance.PRGAoutputsProbabilitiesS1eq0[ii].experimentsNumber++;
+        }
+        else if( ii < experimentInstance.PRGAoutputsProbabilitiesS1neq0.size() )
+        {
+            experimentInstance.PRGAoutputsProbabilitiesS1neq0[ii].realOcurrences[k]++;
+            experimentInstance.PRGAoutputsProbabilitiesS1neq0[ii].experimentsNumber++;
+        }
+        experimentInstance.PRGAoutputsProbabilities[ii].realOcurrences[k]++;
+        experimentInstance.PRGAoutputsProbabilities[ii].experimentsNumber++;
+
+        //check vs the size of arrays inside jArrayStruct 
+        if (experimentInstance.jArrays4eachPass 
+            &&
+            ii < 256
+            &&
+            (*experimentInstance.jArrays4eachPass).size() > experimentInstance.experimentsNumber
+        )
+        {
+            (*experimentInstance.jArrays4eachPass)[experimentInstance.experimentsNumber].values[ii] = retrievedJindexValue;
+            (*experimentInstance.jArrays4eachPass)[experimentInstance.experimentsNumber].isOdd[ii] = (retrievedJindexValue % 2 != 0)? true : false;
+        }
+    }
+
+    return 0;
+}
+
+
+
+int FillOcurrencesAfterKSAreturnPRGAstreamSSXS1neq0( RC4calcInstanceInPractice& experimentInstance)
+{   
+    RC4 cipher(experimentInstance.getPassword() );
+    uint8_t temp_state_array[256];
+    cipher.getStateArray(temp_state_array);
+    if(temp_state_array[1] != 0)
+    {
+        for (size_t i = 0; i < 256; i++)
+        {
+            experimentInstance.realOccurrenceProbability[i][ temp_state_array[temp_state_array[i] ] ]++;
+        }
+        experimentInstance.experimentsNumber++;
+    }
+    
+
+    for (size_t ii = 0; ii < experimentInstance.PRGAoutputsProbabilities.size() ; ii++)
+    {
+        uint8_t retrievedJindexValue = cipher.getJindex();
+        uint8_t k = cipher.getKeystreamValueDEBUG();
+
+
+
+        if(temp_state_array[1] == 0 && ii < experimentInstance.PRGAoutputsProbabilitiesS1eq0.size() ) 
+        {
+            experimentInstance.PRGAoutputsProbabilitiesS1eq0[ii].realOcurrences[k]++;
+            experimentInstance.PRGAoutputsProbabilitiesS1eq0[ii].experimentsNumber++;
+        }
+        else if( ii < experimentInstance.PRGAoutputsProbabilitiesS1neq0.size() )
+        {
+            experimentInstance.PRGAoutputsProbabilitiesS1neq0[ii].realOcurrences[k]++;
+            experimentInstance.PRGAoutputsProbabilitiesS1neq0[ii].experimentsNumber++;
+        }
+        experimentInstance.PRGAoutputsProbabilities[ii].realOcurrences[k]++;
+        experimentInstance.PRGAoutputsProbabilities[ii].experimentsNumber++;
+
+        //check vs the size of arrays inside jArrayStruct 
+        if (experimentInstance.jArrays4eachPass 
+            &&
+            ii < 256
+            &&
+            (*experimentInstance.jArrays4eachPass).size() > experimentInstance.experimentsNumber
+        )
+        {
+            (*experimentInstance.jArrays4eachPass)[experimentInstance.experimentsNumber].values[ii] = retrievedJindexValue;
+            (*experimentInstance.jArrays4eachPass)[experimentInstance.experimentsNumber].isOdd[ii] = (retrievedJindexValue % 2 != 0)? true : false;
+        }
+    }
+
+    return 0;
+}
+
+
+
+int FillOcurrencesAfterKSAreturnPRGAstreamS1neq0( RC4calcInstanceInPractice& experimentInstance)
+{   
+    RC4 cipher(experimentInstance.getPassword() );
+    uint8_t temp_state_array[256];
+    cipher.getStateArray(temp_state_array);
+    if(temp_state_array[1] != 0)
+    {
+        for (size_t i = 0; i < 256; i++)
+        {
+            experimentInstance.realOccurrenceProbability[i][ temp_state_array[i] ]++;
+        }
+        experimentInstance.experimentsNumber++;
     }
     
 

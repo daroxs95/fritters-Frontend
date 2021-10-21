@@ -37,6 +37,12 @@ bool mMenuItemSimple(const char* label, const char* shortcut, bool* p_selected, 
     return ImGui::MenuItem(label, shortcut, p_selected, enabled);
 }
 
+int mInputIntSimple(const char* label, int v, const int &step = 1, int step_fast = 100, ImGuiInputTextFlags flags = 0)
+{
+    ImGui::InputInt(label, &v, step, step_fast, 0);
+    return v;
+}
+
 
 int bindImGui2sol2( sol::state &lua )
 {
@@ -49,6 +55,9 @@ int bindImGui2sol2( sol::state &lua )
     imgui["CollapsingHeaderSimple"]                                         = mCollapsingHeaderSimple;
     imgui["Button"]                                                         = mButtonSimple;
     //imgui["Button2"]                                                        = ImGui::Button;
+    imgui["SameLine"]                                                       = ImGui::SameLine;
+    imgui["InputInt"]                                                       = mInputIntSimple;
+
 
     imgui["TreeNode"]                                                       = mTreeNodeSimple;
     imgui["TreePop"]                                                        = ImGui::TreePop;
@@ -66,6 +75,14 @@ int bindImGui2sol2( sol::state &lua )
 
 int bindCryptoExperimentsStructs2sol2( sol::state &lua )
 {
+
+    sol::usertype<Single256ArrayOutputProb> Single256ArrayOutputProb_type = 
+        lua.new_usertype<Single256ArrayOutputProb>("Single256ArrayOutputProb",
+		sol::constructors<Single256ArrayOutputProb()>());
+    Single256ArrayOutputProb_type["getOccurrenceProbability"]               =&Single256ArrayOutputProb::getOccurrenceProbability;
+
+
+
     sol::usertype<RC4calcInstanceInPractice> RC4calcInstanceInPractice_type = 
         lua.new_usertype<RC4calcInstanceInPractice>("RC4calcInstanceInPractice",
 		sol::constructors<RC4calcInstanceInPractice()>());
@@ -74,7 +91,9 @@ int bindCryptoExperimentsStructs2sol2( sol::state &lua )
     RC4calcInstanceInPractice_type["experimentsNumber"]                     = &RC4calcInstanceInPractice::experimentsNumber;
     RC4calcInstanceInPractice_type["getOccurrenceProbability"]              = &RC4calcInstanceInPractice::getOccurrenceProbability;
     RC4calcInstanceInPractice_type["isActive"]                              = &RC4calcInstanceInPractice::isActive;
-    RC4calcInstanceInPractice_type["PRGAoutputsProbabilities"]                              = &RC4calcInstanceInPractice::PRGAoutputsProbabilities;
+    RC4calcInstanceInPractice_type["PRGAoutputsProbabilities"]              = &RC4calcInstanceInPractice::PRGAoutputsProbabilities;
+    RC4calcInstanceInPractice_type["PRGAoutputsProbabilitiesS1eq0"]         = &RC4calcInstanceInPractice::PRGAoutputsProbabilitiesS1eq0;
+    RC4calcInstanceInPractice_type["PRGAoutputsProbabilitiesS1neq0"]        = &RC4calcInstanceInPractice::PRGAoutputsProbabilitiesS1neq0;
 
 
     return 0;

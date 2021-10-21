@@ -23,6 +23,11 @@ struct Single256ArrayOutputProb
     float occurrenceProbability[256];    
     ///number of experiments executed
     size_t experimentsNumber = 0;
+
+    float getOccurrenceProbability(const int &u)
+    {
+        return occurrenceProbability[u];
+    }
 };
 
 

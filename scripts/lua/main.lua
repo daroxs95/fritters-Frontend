@@ -41,18 +41,36 @@ if imgui.CollapsingHeaderSimple('Lua Script',0) then
     end
 
     if imgui.Button('Print P(S[x]=1)') then
-        --print( KSAprobXeq1(12) )
+        --print( KSAprobSXeq1(12) )
     end
 
     if imgui.Button('Print P(S[S[1]]=0)') then
-        print('id ', data[3].id)
-        local res = 0
-        for i=1,256 do
-            res = res + data[3]:getOccurrenceProbability(1,i-1) * KSAprobXeq0(i-1)
-            print(i-1 .. " res: " .. res .. " P(S[1])=" .. i-1 .. ": " .. data[3]:getOccurrenceProbability(1,i-1) .. " P(S[" .. i-1 .. "]=0: " .. KSAprobXeq0(i-1) )
-        end
-        print( res )
+        print(KSAprobSS01eq10())
     end
+
+    if imgui.Button('Print PRGA P(K_x = P) at experiment j') then
+        print(data[j].id)
+        local p = 0
+        local pS1eq0 = 0
+        local pS1neq0 = 0
+        for i=1,256 do
+            if i%2 ~= 0 then
+                p = p + data[j].PRGAoutputsProbabilities[x]:getOccurrenceProbability(i-1)
+                pS1eq0 = pS1eq0 + data[j].PRGAoutputsProbabilitiesS1eq0[x]:getOccurrenceProbability(i-1)
+                pS1neq0 = pS1neq0 + data[j].PRGAoutputsProbabilitiesS1neq0[x]:getOccurrenceProbability(i-1)
+            end
+        end
+        print("P(K_x = P) ".. p)
+        print("P(K_x = P | S[1]=0) ".. pS1eq0)
+        print("P(K_x = P | S[1]!=0) ".. pS1neq0)
+    end
+
+    imgui.SameLine(0,-1)
+    
+
+    x = imgui.InputInt("x",x,1,100,0)
+    j = imgui.InputInt("j",j,1,100,0)
+
 end
 
 if imgui.BeginMenuBar() then
