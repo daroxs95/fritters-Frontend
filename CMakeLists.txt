@@ -89,9 +89,10 @@ collect     ( "https://github.com/gabime/spdlog"            "v1.8.5"           f
 collect     ( "https://github.com/ThePhD/sol2"              "v3.2.2"           frittersFrontend )
 
 #temporal solution for lua
-collect     ( "https://github.com/daroxs95/Lua"          "v5.4.2-install"   frittersFrontend )
+collect     ( "https://github.com/daroxs95/Lua"             "v5.4.2-install"   frittersFrontend )
 add_dependencies( _Lua _spdlog)#temporal hack, without this linux build fails in _spdlog due cmake error: unknown flag -pthread
 list(APPEND EXTRA_LIBS "lua")
+
 
 
 if (WIN32)#Windows settings
@@ -162,6 +163,7 @@ set (RequiredExtras
     "scripts/lua/main.lua"
     "scripts/lua/config.lua"
     "scripts/lua/formulae.lua"
+    "scripts/lua/utils.lua"
 )
 get_target_property(BINARY_EXECUTABLE_OUTPUT frittersFrontend RUNTIME_OUTPUT_DIRECTORY)
 foreach (_file ${RequiredExtras})

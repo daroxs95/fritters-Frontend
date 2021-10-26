@@ -4,12 +4,13 @@
 #include <functional>
 
 #include <imgui/imgui.h>
-
-
 #include <sol/sol.hpp>
+#include <easy_imgui/spdlog_helper.h>
+#include <implot/implot.h>
 
 #include "crypto.h"
 #include "widgets/RC4analyticsConfig.h"
+#include "data_types/common.h"
 
 
 bool mCollapsingHeader(const char* label, bool* p_visible, ImGuiTreeNodeFlags flags)
@@ -43,6 +44,53 @@ int mInputIntSimple(const char* label, int v, const int &step = 1, int step_fast
     return v;
 }
 
+void mLoggerInfo(const char* text)
+{
+    getMultiSinkLogger().info(text);
+}
+void mLoggerWarn(const char* text)
+{
+    getMultiSinkLogger().warn(text);
+}
+void mLoggerError(const char* text)
+{
+    getMultiSinkLogger().error(text);
+}
+
+void mImPlotSimpleBeginPlot(const char* title_id,
+                          const char* x_label       = NULL,
+                          const char* y_label       = NULL,
+                          const float& width        = -1,
+                          const float& height       = 0
+                          )
+{
+    ImPlot::BeginPlot(title_id,x_label,y_label,ImVec2(width,height));
+}
+
+
+int bindLogger2sol2 (sol::state &lua)
+{
+    sol::table logger = lua["logger"].get_or_create<sol::table>();
+
+    logger["info"]      = mLoggerInfo;
+    logger["warn"]      = mLoggerWarn;
+    logger["error"]     = mLoggerError;
+
+    return 0;
+}
+
+
+int bindImPlotr2sol2 (sol::state &lua)
+{
+    sol::table implot = lua["implot"].get_or_create<sol::table>();
+
+    implot["BeginPlot"]      = mImPlotSimpleBeginPlot;
+    implot["EndPlot"]      = ImPlot::EndPlot;
+    //implot["PlotShaded"]      = template <> void ImPlot::PlotShaded<float>{};
+
+    return 0;
+}
+
 
 int bindImGui2sol2( sol::state &lua )
 {
@@ -67,7 +115,7 @@ int bindImGui2sol2( sol::state &lua )
     imgui["BeginMenu"]                                                      = ImGui::BeginMenu;
     imgui["EndMenu"]                                                        = ImGui::EndMenu;
     imgui["MenuItem"]                                                       = mMenuItemSimple;
-
+    imgui["SetClipboardText"]                                               = ImGui::SetClipboardText;
 
     return 0;
 }
@@ -95,7 +143,7 @@ int bindCryptoExperimentsStructs2sol2( sol::state &lua )
     RC4calcInstanceInPractice_type["PRGAoutputsProbabilitiesS1eq0"]         = &RC4calcInstanceInPractice::PRGAoutputsProbabilitiesS1eq0;
     RC4calcInstanceInPractice_type["PRGAoutputsProbabilitiesS1neq0"]        = &RC4calcInstanceInPractice::PRGAoutputsProbabilitiesS1neq0;
 
-
+    
     return 0;
 }
 
@@ -106,6 +154,18 @@ int bindConfigStructs2sol2( sol::state &lua )
         lua.new_usertype<Config>("Config", sol::constructors<Config()>());
  
     Config_type["plotHeight"]                                    = &Config::plotHeight;
+
+    return 0;
+}
+
+
+int bindJarraysStructs2sol2( sol::state &lua )
+{
+    sol::usertype<jArrayStruct> jArrayStruct_type = 
+        lua.new_usertype<jArrayStruct>("jArrayStruct", sol::constructors<jArrayStruct()>());
+ 
+    jArrayStruct_type["getValue"]   = &jArrayStruct::getValue;
+    jArrayStruct_type["getIsOdd"]   = &jArrayStruct::getIsOdd;
 
     return 0;
 }

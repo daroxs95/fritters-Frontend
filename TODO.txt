@@ -30,3 +30,6 @@
 -set a config struct to load and edit with lua at start, instead of a classic .ini file, lua script can do some things, bad idea any way i still need an .ini like, to save config from app 
 -make experiment data exportable in tabular form, maybe latex ready, all in lua should be fast to implement
 -implement meaningful error mensages about errors in lua
+-in lua scripts make checks of nil elements at access or something, like when trying access some PRGA data that is not filled yet
+-start to using CUstom Data and Getters in implot
+-fix in scripts generating latex code, the spacing and new lines inserted, due to errors on labels for example

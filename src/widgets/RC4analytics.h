@@ -92,10 +92,24 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                 jArraysPRGA.resize(config.maxNumJArrays);
                 
                 //Binding ImGui to Lua state and loading main.lua
-                lua.open_libraries(sol::lib::base, sol::lib::package);
+                lua.open_libraries( sol::lib::base, 
+                                    sol::lib::package, 
+                                    sol::lib::string, 
+                                    sol::lib::math, 
+                                    sol::lib::io,
+                                    sol::lib::os,
+                                    sol::lib::coroutine,
+                                    sol::lib::table
+                                );
                 bindImGui2sol2(lua);
                 bindCryptoExperimentsStructs2sol2(lua);
                 bindConfigStructs2sol2(lua);
+                bindLogger2sol2(lua);
+                bindImPlotr2sol2(lua);
+                bindJarraysStructs2sol2(lua);
+
+                lua["jArrays"] = &jArrays;
+                lua["jArraysPRGA"] = &jArraysPRGA;
                 lua["data"]     = &practiceProbabilities;
                 lua["config"]   = &config;
                 //std::string x = lua["package"]["path"];
@@ -553,6 +567,9 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
 
                     //this is to make the widget zoomable/show it in a modal
                     static bool showPlotFullscreen = false;
+                    static bool plotAsBarChart = false;
+
+                    ImGui::Checkbox("Plot as bar charts", &plotAsBarChart);
                     if (showPlotFullscreen) 
                     {
                         ImGui::OpenPopup("Fullscreen");
@@ -604,8 +621,15 @@ void RC4Analytics(ImGuiIO &io, SDL_Window* window)                              
                         {
                             if(practiceProbabilities[j].isActive)
                             {           
-                                ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256, 0);
-                                ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
+                                if(plotAsBarChart)
+                                {
+                                    ImPlot::PlotBars(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
+                                }
+                                else
+                                {
+                                    ImPlot::PlotShaded(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256, 0);
+                                    ImPlot::PlotLine(practiceProbabilities[j].id, practiceProbabilities[j].occurrenceProbability[positions[i]], 256);
+                                }
                             }
                         }
 

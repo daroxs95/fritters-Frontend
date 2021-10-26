@@ -8,6 +8,17 @@ struct jArrayStruct
 {
     float values[256];
     float isOdd[256];//set to float cause ImGui histogram does not support bool
+
+    float getValue(const int & i)
+    {
+        if (i < 256 ) return values[i];
+        else return -1;
+    }
+    float getIsOdd(const int & i)
+    {
+        if (i < 256 ) return isOdd[i];
+        else return -1;
+    }
 };
 
 /**
